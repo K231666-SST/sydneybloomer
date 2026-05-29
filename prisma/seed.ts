@@ -222,7 +222,7 @@ async function main() {
     {
       name: 'Royal Protea Heirloom',
       slug: 'royal-protea-heirloom',
-      description: 'Spectacular King proteas from the Hunter Valley. Australia's national floral emblem, harvested at peak bloom for maximum impact.',
+      description: "Spectacular King proteas from the Hunter Valley. Australia's national floral emblem, harvested at peak bloom for maximum impact.",
       imageUrl: 'https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800',
       images: ['https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800'],
       price: 28,
