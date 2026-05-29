@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gold:   #B8965C;
+    --cream:  #F5F2EE;
+    --dark:   #1A1A18;
+    --sage:   #3C6B50;
+    --blush:  #EAD4CB;
+    --mid:    #4A4A45;
+    --border: #E8E4DA;
+    --muted:  #7A7A72;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply bg-bloomer-cream text-bloomer-dark antialiased;
+    font-family: var(--font-dm-sans), system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-cormorant), Georgia, serif;
+    @apply font-normal tracking-tight;
+  }
+
+  * { box-sizing: border-box; }
+  img { @apply block max-w-full; }
+  a { @apply transition-colors duration-200; }
+
+  ::selection { background: rgba(184, 150, 92, 0.2); }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--cream); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+}
+
+@layer components {
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2
+           bg-bloomer-gold text-white text-[11px] font-medium
+           tracking-[0.14em] uppercase px-8 py-4
+           transition-all duration-300 hover:bg-yellow-700 disabled:opacity-50;
+  }
+
+  .btn-outline-gold {
+    @apply inline-flex items-center justify-center gap-2
+           border border-bloomer-gold text-bloomer-gold text-[11px] font-medium
+           tracking-[0.14em] uppercase px-8 py-4
+           transition-all duration-300 hover:bg-bloomer-gold hover:text-white;
+  }
+
+  .btn-outline-dark {
+    @apply inline-flex items-center justify-center gap-2
+           border border-bloomer-dark text-bloomer-dark text-[11px] font-medium
+           tracking-[0.14em] uppercase px-8 py-4
+           transition-all duration-300 hover:bg-bloomer-dark hover:text-white;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           text-bloomer-muted text-[11px] font-medium
+           tracking-[0.14em] uppercase
+           transition-colors duration-300 hover:text-bloomer-dark;
+  }
+
+  /* ── Section Labels ──────────────────────────────────────── */
+  .label {
+    @apply text-[10px] font-medium tracking-[0.22em] uppercase text-bloomer-gold;
+  }
+
+  .section-label {
+    @apply flex items-center gap-3 text-[10px] font-medium tracking-[0.22em] uppercase text-bloomer-gold;
+  }
+  .section-label::before {
+    content: '';
+    @apply block w-7 h-px bg-bloomer-gold flex-shrink-0;
+  }
+
+  /* ── Input Fields ────────────────────────────────────────── */
+  .input-field {
+    @apply w-full border border-bloomer-border bg-white px-4 py-3 text-sm
+           text-bloomer-dark placeholder:text-bloomer-muted
+           focus:outline-none focus:border-bloomer-gold transition-colors duration-200;
+  }
+
+  .select-field {
+    @apply input-field appearance-none cursor-pointer;
+  }
+
+  /* ── Cards ───────────────────────────────────────────────── */
+  .card-hover {
+    @apply transition-transform duration-500 hover:-translate-y-1;
+  }
+
+  /* ── Containers ──────────────────────────────────────────── */
+  .container-bloomer {
+    @apply mx-auto px-6 max-w-7xl;
+  }
+
+  /* ── Sections ────────────────────────────────────────────── */
+  .section-pad { @apply py-24 lg:py-32; }
+  .section-pad-sm { @apply py-16 lg:py-20; }
+
+  /* ── Dividers ────────────────────────────────────────────── */
+  .divider { @apply border-t border-bloomer-border; }
+
+  /* ── Image overlays ──────────────────────────────────────── */
+  .img-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-black/40 to-transparent;
+  }
+
+  /* ── Glassmorphism ───────────────────────────────────────── */
+  .glass {
+    @apply bg-white/70 backdrop-blur-md border border-white/50;
+  }
+
+  .glass-dark {
+    @apply bg-bloomer-dark/70 backdrop-blur-md border border-white/10;
+  }
+
+  /* ── Admin sidebar item ──────────────────────────────────── */
+  .admin-nav-item {
+    @apply flex items-center gap-3 px-4 py-3 text-sm text-bloomer-muted
+           hover:text-bloomer-dark hover:bg-cream-100 transition-colors rounded-sm;
+  }
+  .admin-nav-item.active {
+    @apply text-bloomer-gold bg-gold-50;
+  }
+
+  /* ── Skeleton loader ─────────────────────────────────────── */
+  .skeleton {
+    @apply animate-pulse bg-bloomer-border rounded;
+  }
+
+  /* ── Badge ───────────────────────────────────────────────── */
+  .badge {
+    @apply inline-block px-2 py-0.5 text-[10px] font-medium tracking-wider uppercase;
+  }
+  .badge-gold   { @apply badge bg-gold-100 text-gold-700; }
+  .badge-sage   { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-blush  { @apply badge bg-pink-50 text-pink-700; }
+  .badge-dark   { @apply badge bg-bloomer-dark text-white; }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Luxury hover underline */
+  .hover-underline {
+    @apply relative after:absolute after:bottom-0 after:left-0 after:h-px
+           after:w-0 after:bg-current after:transition-all after:duration-300
+           hover:after:w-full;
+  }
+
+  /* Aspect ratios */
+  .aspect-portrait { aspect-ratio: 3 / 4; }
+  .aspect-square   { aspect-ratio: 1 / 1; }
+  .aspect-wide     { aspect-ratio: 16 / 9; }
+}
