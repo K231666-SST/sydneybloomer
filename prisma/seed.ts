@@ -3,340 +3,253 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
-async function main() {
-  console.log('🌸 Seeding Sydney Bloomer database...')
+// Image pools per category (verified working URLs)
+const IMG = {
+  rose:    'https://images.pexels.com/photos/56866/garden-rose-red-pink-56866.jpeg?auto=compress&cs=tinysrgb&w=800',
+  pink:    'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800',
+  white:   'https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800',
+  lily:    'https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?auto=format&fit=crop&w=800&q=80',
+  tulip:   'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80',
+  orchid:  'https://images.unsplash.com/photo-1457089328109-e5d9bd499191?auto=format&fit=crop&w=800&q=80',
+  field:   'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80',
+  bouquet: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?auto=format&fit=crop&w=800&q=80',
+  single:  'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80',
+  moody:   'https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80',
+}
 
-  // ─── Admin User ───────────────────────────────────────────
-  const adminPassword = await bcrypt.hash('admin123!', 12)
+interface FlowerSeed {
+  name: string; slug: string; scientificName?: string
+  description: string; careInstructions?: string
+  fragrance?: string; stemLengthCm?: number; vaseLifeDays?: number
+  imageUrl: string; price: number; wholesalePrice: number
+  unit?: string; season: Season; origin: FlowerOrigin; country: string
+  color: string[]; flowerType: string; occasion: string[]
+  isFeatured?: boolean; categorySlug: string
+  inventory: number; lowStock: number
+  importInfo?: { sourceCountry: string; supplier?: string; arrivalDay?: string; shelfLifeDays?: number }
+}
+
+const flowers: FlowerSeed[] = [
+  // ═══════════════════════ ROSES ═══════════════════════
+  { name:'Red Freedom Rose', slug:'red-freedom-rose', scientificName:'Rosa hybrida Freedom', description:'Classic deep red long-stem rose. Velvety petals and intoxicating fragrance. Colombia\'s finest.', careInstructions:'Cut stems at 45°, change water every 2 days, keep away from fruit.', fragrance:'strong', stemLengthCm:60, vaseLifeDays:12, imageUrl:IMG.rose, price:8.50, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Colombia', color:['red','deep red'], flowerType:'Rose', occasion:['romance','wedding','birthday'], isFeatured:true, categorySlug:'roses', inventory:850, lowStock:100, importInfo:{sourceCountry:'Colombia',supplier:'Bogotá Blooms SA',arrivalDay:'Mon, Wed, Fri',shelfLifeDays:14} },
+  { name:'White Avalanche Rose', slug:'white-avalanche-rose', scientificName:'Rosa hybrida Avalanche', description:'Premium white rose with a creamy centre. The industry standard for weddings worldwide.', careInstructions:'Remove lower leaves, recut stems, use flower food, keep cool.', fragrance:'mild', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.white, price:9.00, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Rose', occasion:['wedding','sympathy','corporate'], isFeatured:true, categorySlug:'roses', inventory:750, lowStock:100, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Thu, Sat',shelfLifeDays:14} },
+  { name:'Pink Mayra Rose', slug:'pink-mayra-rose', scientificName:'Rosa hybrida Mayra', description:'Soft pink blooms with a high-centre form. Popular for bridal and event work.', careInstructions:'Recut stems diagonally, use clean water with flower food.', fragrance:'moderate', stemLengthCm:50, vaseLifeDays:12, imageUrl:IMG.pink, price:8.50, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Ecuador', color:['pink','blush'], flowerType:'Rose', occasion:['wedding','birthday','romance'], categorySlug:'roses', inventory:650, lowStock:80, importInfo:{sourceCountry:'Ecuador',supplier:'Rosas del Ecuador',arrivalDay:'Mon, Thu',shelfLifeDays:12} },
+  { name:'Peach Juliet Garden Rose', slug:'peach-juliet-garden-rose', scientificName:'Rosa hybrida Juliet', description:'David Austin\'s signature peach garden rose. Full, cupped blooms beloved by floral designers.', careInstructions:'Condition overnight in cold water before arranging.', fragrance:'strong', stemLengthCm:50, vaseLifeDays:10, imageUrl:IMG.pink, price:18.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Ecuador', color:['peach','apricot','coral'], flowerType:'Garden Rose', occasion:['wedding','luxury','birthday'], isFeatured:true, categorySlug:'roses', inventory:180, lowStock:25, importInfo:{sourceCountry:'Ecuador',supplier:'Highland Roses',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Ivory Patience Garden Rose', slug:'ivory-patience-garden-rose', scientificName:'Rosa hybrida Patience', description:'Creamy ivory David Austin garden rose with extraordinary petal count and sweet fragrance.', fragrance:'strong', stemLengthCm:50, vaseLifeDays:10, imageUrl:IMG.white, price:16.00, wholesalePrice:7.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['ivory','cream','white'], flowerType:'Garden Rose', occasion:['wedding','luxury'], categorySlug:'roses', inventory:120, lowStock:20, importInfo:{sourceCountry:'Netherlands',supplier:'Porta Nova',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Deep Red Black Baccara Rose', slug:'black-baccara-rose', scientificName:'Rosa hybrida Black Baccara', description:'Darkest velvet-red rose with near-black petal edges. Dramatic and sophisticated.', fragrance:'mild', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.moody, price:11.00, wholesalePrice:4.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['dark red','burgundy','black-red'], flowerType:'Rose', occasion:['luxury','romance','corporate'], categorySlug:'roses', inventory:320, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Thu',shelfLifeDays:14} },
+  { name:'Orange Leonidas Rose', slug:'orange-leonidas-rose', scientificName:'Rosa hybrida Leonidas', description:'Warm terracotta-orange rose from Kenya. Earthy tones perfect for autumn arrangements.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:12, imageUrl:IMG.bouquet, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['orange','terracotta','rust'], flowerType:'Rose', occasion:['birthday','corporate','wedding'], categorySlug:'roses', inventory:420, lowStock:60, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Wed, Sat',shelfLifeDays:12} },
+  { name:'Yellow Penny Lane Rose', slug:'yellow-penny-lane-rose', scientificName:'Rosa hybrida Penny Lane', description:'Bright lemon-yellow rose with excellent vase life. Uplifting and joyful.', fragrance:'mild', stemLengthCm:55, vaseLifeDays:14, imageUrl:IMG.field, price:8.50, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['yellow','lemon'], flowerType:'Rose', occasion:['birthday','spring','corporate'], categorySlug:'roses', inventory:380, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:14} },
+  { name:'Lavender Maritim Rose', slug:'lavender-maritim-rose', scientificName:'Rosa hybrida Maritim', description:'Rare lavender-mauve rose. Unique colour makes it a statement flower in any arrangement.', fragrance:'moderate', stemLengthCm:50, vaseLifeDays:12, imageUrl:IMG.single, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['lavender','mauve','lilac'], flowerType:'Rose', occasion:['wedding','luxury','birthday'], isFeatured:true, categorySlug:'roses', inventory:180, lowStock:25, importInfo:{sourceCountry:'Netherlands',supplier:'Preesman',arrivalDay:'Thursday',shelfLifeDays:12} },
+  { name:'Coral Terracotta Rose', slug:'coral-terracotta-rose', scientificName:'Rosa hybrida Terracotta', description:'Trendy copper-coral rose. Perfect for rustic, bohemian and contemporary wedding palettes.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:12, imageUrl:IMG.bouquet, price:9.00, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Ecuador', color:['coral','copper','terracotta'], flowerType:'Rose', occasion:['wedding','birthday','corporate'], categorySlug:'roses', inventory:300, lowStock:40, importInfo:{sourceCountry:'Ecuador',supplier:'Rosas del Ecuador',arrivalDay:'Mon, Thu',shelfLifeDays:12} },
+  { name:'Cream Amnesia Rose', slug:'cream-amnesia-rose', scientificName:'Rosa hybrida Amnesia', description:'Subtle cream-to-mauve rose with an antique feel. A florist favourite for elegant arrangements.', fragrance:'moderate', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.white, price:10.00, wholesalePrice:4.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['cream','greige','antique'], flowerType:'Rose', occasion:['wedding','sympathy','corporate'], categorySlug:'roses', inventory:400, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Sat',shelfLifeDays:14} },
+  { name:'Spray Pink Romeo Rose', slug:'spray-pink-romeo-rose', scientificName:'Rosa hybrida Romeo', description:'Multi-headed spray rose with 5–7 blooms per stem. Excellent for mass arrangements.', fragrance:'mild', stemLengthCm:45, vaseLifeDays:12, imageUrl:IMG.pink, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['pink'], flowerType:'Spray Rose', occasion:['wedding','birthday','sympathy'], categorySlug:'roses', inventory:600, lowStock:80, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Thu, Sat',shelfLifeDays:12} },
+  { name:'Spray White Lady Bombastic Rose', slug:'spray-white-lady-bombastic-rose', scientificName:'Rosa hybrida Lady Bombastic', description:'Classic white spray rose. Prolific heads per stem, ideal for bridal and table work.', fragrance:'mild', stemLengthCm:45, vaseLifeDays:12, imageUrl:IMG.white, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Spray Rose', occasion:['wedding','sympathy','corporate'], categorySlug:'roses', inventory:600, lowStock:80, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Thu, Sat',shelfLifeDays:12} },
+  { name:'Spray Red Tineke Rose', slug:'spray-red-tineke-rose', scientificName:'Rosa hybrida Tineke', description:'Vibrant red spray rose from Kenyan growers. Compact blooms with strong stems.', fragrance:'mild', stemLengthCm:45, vaseLifeDays:12, imageUrl:IMG.rose, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['red'], flowerType:'Spray Rose', occasion:['romance','birthday','corporate'], categorySlug:'roses', inventory:500, lowStock:70, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Wed, Sat',shelfLifeDays:12} },
+  { name:'Blush Sahara Rose', slug:'blush-sahara-rose', scientificName:'Rosa hybrida Sahara', description:'Warm blush-nude rose with golden undertones. A favourite for romantic and luxurious events.', fragrance:'moderate', stemLengthCm:55, vaseLifeDays:12, imageUrl:IMG.pink, price:9.00, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['blush','nude','peach'], flowerType:'Rose', occasion:['wedding','birthday','luxury'], categorySlug:'roses', inventory:350, lowStock:45, importInfo:{sourceCountry:'Netherlands',supplier:'Porta Nova',arrivalDay:'Tue, Fri',shelfLifeDays:12} },
+  { name:'Hot Pink Hotshot Rose', slug:'hot-pink-hotshot-rose', scientificName:'Rosa hybrida Hotshot', description:'Vivid hot pink with exceptional longevity. Great for high-energy celebrations and events.', fragrance:'moderate', stemLengthCm:55, vaseLifeDays:14, imageUrl:IMG.pink, price:8.50, wholesalePrice:3.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Colombia', color:['hot pink','magenta'], flowerType:'Rose', occasion:['birthday','corporate','event'], categorySlug:'roses', inventory:480, lowStock:60, importInfo:{sourceCountry:'Colombia',supplier:'Bogotá Blooms SA',arrivalDay:'Mon, Wed, Fri',shelfLifeDays:14} },
+  { name:'Garden Rose Miranda', slug:'garden-rose-miranda', scientificName:'Rosa hybrida Miranda', description:'Romantic pink garden rose with dense petals. Combines the charm of old English roses with reliability.', fragrance:'strong', stemLengthCm:45, vaseLifeDays:10, imageUrl:IMG.pink, price:16.00, wholesalePrice:7.00, season:'SPRING', origin:'IMPORTED', country:'Ecuador', color:['pink','deep pink'], flowerType:'Garden Rose', occasion:['wedding','birthday','luxury'], categorySlug:'roses', inventory:140, lowStock:20, importInfo:{sourceCountry:'Ecuador',supplier:'Highland Roses',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Burgundy Rose Don Juan', slug:'burgundy-don-juan-rose', scientificName:'Rosa hybrida Don Juan', description:'Deep burgundy climbing rose variety. Rich colour ideal for winter and formal events.', fragrance:'strong', stemLengthCm:55, vaseLifeDays:12, imageUrl:IMG.moody, price:9.00, wholesalePrice:3.80, season:'AUTUMN', origin:'IMPORTED', country:'Netherlands', color:['burgundy','wine','deep red'], flowerType:'Rose', occasion:['wedding','romance','corporate'], categorySlug:'roses', inventory:260, lowStock:35, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:12} },
+  // ═══════════════════════ TULIPS ═══════════════════════
+  { name:'White Dynasty Tulip', slug:'white-dynasty-tulip', scientificName:'Tulipa Dynasty', description:'Pure white single tulip with a clean, elegant form. The most versatile tulip in the market.', careInstructions:'Stand in deep water overnight. Tulips continue to grow after cutting — keep cool.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.white, price:6.00, wholesalePrice:2.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Tulip', occasion:['wedding','corporate','sympathy'], isFeatured:true, categorySlug:'tulips', inventory:600, lowStock:80, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:8} },
+  { name:'Red Oxford Tulip', slug:'red-oxford-tulip', scientificName:'Tulipa Oxford', description:'Classic single red tulip. Bold and impactful in mass arrangements.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.rose, price:6.00, wholesalePrice:2.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['red'], flowerType:'Tulip', occasion:['romance','birthday','spring'], categorySlug:'tulips', inventory:500, lowStock:70, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:8} },
+  { name:'Pink Foxtrot Double Tulip', slug:'pink-foxtrot-double-tulip', scientificName:'Tulipa Foxtrot', description:'Gorgeous double-flowered pink tulip resembling a peony. Highly sought after for weddings.', fragrance:'mild', stemLengthCm:40, vaseLifeDays:7, imageUrl:IMG.pink, price:8.00, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['pink','blush'], flowerType:'Double Tulip', occasion:['wedding','birthday'], isFeatured:true, categorySlug:'tulips', inventory:400, lowStock:55, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Purple Rain Tulip', slug:'purple-rain-tulip', scientificName:'Tulipa Purple Rain', description:'Deep violet single tulip with a blue sheen. Sophisticated and dramatic.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.moody, price:7.00, wholesalePrice:3.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['purple','violet'], flowerType:'Tulip', occasion:['wedding','corporate','birthday'], categorySlug:'tulips', inventory:380, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:8} },
+  { name:'Strong Gold Tulip', slug:'strong-gold-tulip', scientificName:'Tulipa Strong Gold', description:'Bright golden-yellow single tulip. Cheerful and long-lasting. Perfect for spring arrangements.', fragrance:'none', stemLengthCm:45, vaseLifeDays:9, imageUrl:IMG.field, price:6.00, wholesalePrice:2.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['yellow','gold'], flowerType:'Tulip', occasion:['birthday','spring','corporate'], categorySlug:'tulips', inventory:480, lowStock:65, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:9} },
+  { name:'Orange Princess Parrot Tulip', slug:'orange-princess-parrot-tulip', scientificName:'Tulipa Orange Princess', description:'Flamboyant parrot tulip with ruffled orange petals. A show-stopper in any arrangement.', fragrance:'mild', stemLengthCm:40, vaseLifeDays:7, imageUrl:IMG.bouquet, price:8.50, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['orange','red'], flowerType:'Parrot Tulip', occasion:['birthday','spring','event'], categorySlug:'tulips', inventory:300, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Queen of Night Tulip', slug:'queen-of-night-tulip', scientificName:'Tulipa Queen of Night', description:'Near-black single tulip — one of the most sought-after varieties in the world. Deeply dramatic.', fragrance:'none', stemLengthCm:45, vaseLifeDays:9, imageUrl:IMG.moody, price:8.50, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['deep purple','black','maroon'], flowerType:'Tulip', occasion:['wedding','luxury','corporate'], isFeatured:true, categorySlug:'tulips', inventory:250, lowStock:35, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:9} },
+  { name:'Angélique Double Tulip', slug:'angelique-double-tulip', scientificName:'Tulipa Angélique', description:'Soft pink double tulip with peony-like blooms. One of the most romantic tulip varieties.', fragrance:'mild', stemLengthCm:40, vaseLifeDays:7, imageUrl:IMG.pink, price:8.00, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['soft pink','blush'], flowerType:'Double Tulip', occasion:['wedding','birthday','romance'], categorySlug:'tulips', inventory:340, lowStock:45, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Spring Green Tulip', slug:'spring-green-tulip', scientificName:'Tulipa Spring Green', description:'White petals with distinctive green flame. A modernist florist favourite.', fragrance:'none', stemLengthCm:45, vaseLifeDays:9, imageUrl:IMG.field, price:9.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white','green'], flowerType:'Viridiflora Tulip', occasion:['wedding','corporate','luxury'], categorySlug:'tulips', inventory:220, lowStock:30, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:9} },
+  { name:'Salmon Parrot Tulip', slug:'salmon-parrot-tulip', scientificName:'Tulipa Salmon Parrot', description:'Frilly salmon-pink parrot tulip. Exuberant and photogenic for editorial and event work.', fragrance:'mild', stemLengthCm:40, vaseLifeDays:7, imageUrl:IMG.pink, price:8.50, wholesalePrice:3.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['salmon','peach','pink'], flowerType:'Parrot Tulip', occasion:['wedding','birthday','event'], categorySlug:'tulips', inventory:280, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Ice Cream Fringed Tulip', slug:'ice-cream-fringed-tulip', scientificName:'Tulipa Ice Cream', description:'White fringed tulip with a frilly, crystalline edge. Elegant and ethereal.', fragrance:'none', stemLengthCm:42, vaseLifeDays:8, imageUrl:IMG.white, price:9.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Fringed Tulip', occasion:['wedding','luxury'], categorySlug:'tulips', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Kapiteyn BV',arrivalDay:'Tuesday',shelfLifeDays:8} },
+  // ═══════════════════════ PEONIES ═══════════════════════
+  { name:'Pink Sarah Bernhardt Peony', slug:'pink-sarah-bernhardt-peony', scientificName:'Paeonia lactiflora Sarah Bernhardt', description:'The world\'s most popular peony. Soft pink with a sweet fragrance and generous full bloom.', careInstructions:'Condition in cool water for 24hrs. Remove foliage below waterline. Ethylene-sensitive — keep from fruit.', fragrance:'strong', stemLengthCm:60, vaseLifeDays:7, imageUrl:IMG.pink, price:28.00, wholesalePrice:12.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['pink','blush'], flowerType:'Peony', occasion:['wedding','birthday','luxury'], isFeatured:true, categorySlug:'peonies', inventory:280, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'White Duchesse de Nemours Peony', slug:'white-duchesse-de-nemours-peony', scientificName:'Paeonia lactiflora Duchesse de Nemours', description:'Pristine white double peony. The bridal peony of choice, with a lemon-cream heart.', fragrance:'strong', stemLengthCm:60, vaseLifeDays:7, imageUrl:IMG.white, price:28.00, wholesalePrice:12.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Peony', occasion:['wedding','sympathy','luxury'], isFeatured:true, categorySlug:'peonies', inventory:240, lowStock:35, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Red Karl Rosenfield Peony', slug:'red-karl-rosenfield-peony', scientificName:'Paeonia lactiflora Karl Rosenfield', description:'Intense crimson-red peony with a bold, ruffly form. Rare and impactful.', fragrance:'moderate', stemLengthCm:65, vaseLifeDays:7, imageUrl:IMG.moody, price:30.00, wholesalePrice:13.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['red','crimson'], flowerType:'Peony', occasion:['wedding','luxury','romance'], categorySlug:'peonies', inventory:160, lowStock:22, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Coral Salmon Dream Peony', slug:'coral-salmon-dream-peony', scientificName:'Paeonia lactiflora Salmon Dream', description:'Exquisite coral-salmon peony. Highly coveted for spring weddings and editorial shoots.', fragrance:'strong', stemLengthCm:60, vaseLifeDays:7, imageUrl:IMG.pink, price:32.00, wholesalePrice:14.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['coral','salmon','peach'], flowerType:'Peony', occasion:['wedding','luxury','birthday'], isFeatured:true, categorySlug:'peonies', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Porta Nova',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Bowl of Cream Peony', slug:'bowl-of-cream-peony', scientificName:'Paeonia lactiflora Bowl of Cream', description:'Enormous creamy-white double peony. The grandest of all peonies. A true luxury specimen.', fragrance:'strong', stemLengthCm:65, vaseLifeDays:7, imageUrl:IMG.white, price:35.00, wholesalePrice:14.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['cream','white'], flowerType:'Peony', occasion:['wedding','luxury'], categorySlug:'peonies', inventory:120, lowStock:18, importInfo:{sourceCountry:'Netherlands',supplier:'Porta Nova',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Blush Shirley Temple Peony', slug:'blush-shirley-temple-peony', scientificName:'Paeonia lactiflora Shirley Temple', description:'Soft blush double peony with a romantic, vintage feel. Popular for garden-style weddings.', fragrance:'strong', stemLengthCm:55, vaseLifeDays:7, imageUrl:IMG.pink, price:30.00, wholesalePrice:13.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['blush','pale pink','soft pink'], flowerType:'Peony', occasion:['wedding','birthday','luxury'], categorySlug:'peonies', inventory:180, lowStock:25, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  // ═══════════════════════ ORCHIDS ═══════════════════════
+  { name:'White Phalaenopsis Orchid', slug:'white-phalaenopsis-orchid', scientificName:'Phalaenopsis amabilis', description:'Classic moth orchid in pure white. Long-lasting and architecturally stunning. Flown weekly from Bangkok.', careInstructions:'Keep in bright indirect light. Water weekly, allow roots to dry between waterings.', fragrance:'none', stemLengthCm:70, vaseLifeDays:28, imageUrl:IMG.white, price:45.00, wholesalePrice:20.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['white'], flowerType:'Orchid', occasion:['corporate','luxury','wedding','sympathy'], isFeatured:true, categorySlug:'orchids', inventory:90, lowStock:12, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'Purple Phalaenopsis Orchid', slug:'purple-phalaenopsis-orchid', scientificName:'Phalaenopsis hybrid purple', description:'Deep purple moth orchid. Exotic and long-lasting — a corporate staple.', fragrance:'none', stemLengthCm:70, vaseLifeDays:28, imageUrl:IMG.moody, price:50.00, wholesalePrice:22.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['purple','violet'], flowerType:'Orchid', occasion:['corporate','luxury','wedding'], isFeatured:true, categorySlug:'orchids', inventory:75, lowStock:10, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'Pink Phalaenopsis Orchid', slug:'pink-phalaenopsis-orchid', scientificName:'Phalaenopsis hybrid pink', description:'Soft pink moth orchid with a magenta lip. Romantic and feminine.', fragrance:'none', stemLengthCm:65, vaseLifeDays:28, imageUrl:IMG.pink, price:45.00, wholesalePrice:20.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['pink','magenta'], flowerType:'Orchid', occasion:['corporate','wedding','birthday'], categorySlug:'orchids', inventory:80, lowStock:12, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'Cymbidium Green Orchid', slug:'cymbidium-green-orchid', scientificName:'Cymbidium Ensifolium Green', description:'Australian-grown green cymbidium. Architectural and long-lasting. A florist statement piece.', fragrance:'mild', stemLengthCm:75, vaseLifeDays:21, imageUrl:IMG.field, price:35.00, wholesalePrice:15.00, season:'WINTER', origin:'LOCAL', country:'Australia', color:['green','lime'], flowerType:'Orchid', occasion:['corporate','luxury','wedding'], categorySlug:'orchids', inventory:60, lowStock:10 },
+  { name:'Cymbidium White Orchid', slug:'cymbidium-white-orchid', scientificName:'Cymbidium hybrid white', description:'Elegant white cymbidium with a spotted lip. Grown in the Southern Highlands.', fragrance:'mild', stemLengthCm:75, vaseLifeDays:21, imageUrl:IMG.white, price:35.00, wholesalePrice:15.00, season:'WINTER', origin:'LOCAL', country:'Australia', color:['white','cream'], flowerType:'Orchid', occasion:['wedding','corporate','luxury'], categorySlug:'orchids', inventory:65, lowStock:10 },
+  { name:'Dendrobium White Orchid', slug:'dendrobium-white-orchid', scientificName:'Dendrobium nobile white', description:'Slender sprays of white dendrobium. Popular for tropical and minimalist event styling.', fragrance:'none', stemLengthCm:50, vaseLifeDays:21, imageUrl:IMG.white, price:20.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['white'], flowerType:'Orchid', occasion:['wedding','corporate','tropical'], categorySlug:'orchids', inventory:100, lowStock:15, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:21} },
+  { name:'Dendrobium Purple Orchid', slug:'dendrobium-purple-orchid', scientificName:'Dendrobium nobile purple', description:'Vivid purple dendrobium sprays. Bold colour for contemporary event design.', fragrance:'none', stemLengthCm:50, vaseLifeDays:21, imageUrl:IMG.moody, price:20.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['purple','violet'], flowerType:'Orchid', occasion:['corporate','wedding','event'], categorySlug:'orchids', inventory:90, lowStock:12, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:21} },
+  { name:'Vanda Blue Orchid', slug:'vanda-blue-orchid', scientificName:'Vanda coerulea', description:'Rare true-blue orchid. One of the most prized specimens in the floral world.', fragrance:'mild', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.moody, price:42.00, wholesalePrice:18.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['blue','indigo'], flowerType:'Orchid', occasion:['luxury','corporate','wedding'], isFeatured:true, categorySlug:'orchids', inventory:40, lowStock:8, importInfo:{sourceCountry:'Thailand',supplier:'Thai Orchid Exports Ltd',arrivalDay:'Wednesday',shelfLifeDays:21} },
+  { name:'Oncidium Dancing Lady Orchid', slug:'oncidium-dancing-lady-orchid', scientificName:'Oncidium flexuosum', description:'Cascading sprays of tiny yellow blooms. Known as "dancing lady" orchid. Light and airy.', fragrance:'mild', stemLengthCm:60, vaseLifeDays:18, imageUrl:IMG.field, price:24.00, wholesalePrice:10.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['yellow','brown'], flowerType:'Orchid', occasion:['wedding','event','corporate'], categorySlug:'orchids', inventory:70, lowStock:10, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:18} },
+  // ═══════════════════════ LILIES ═══════════════════════
+  { name:'White Casa Blanca Oriental Lily', slug:'white-casa-blanca-oriental-lily', scientificName:'Lilium orientale Casa Blanca', description:'The queen of lilies. Pure white with a heavenly fragrance. 3–5 blooms per stem.', careInstructions:'Remove stamens immediately to prevent staining. Keep away from cats (toxic). Recut stems daily.', fragrance:'strong', stemLengthCm:80, vaseLifeDays:12, imageUrl:IMG.white, price:10.00, wholesalePrice:4.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Oriental Lily', occasion:['wedding','sympathy','luxury','corporate'], isFeatured:true, categorySlug:'lilies', inventory:320, lowStock:45, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:12} },
+  { name:'Pink Stargazer Oriental Lily', slug:'pink-stargazer-oriental-lily', scientificName:'Lilium Stargazer', description:'Vivid pink lily with crimson spots and a powerful fragrance. The most iconic lily variety.', fragrance:'strong', stemLengthCm:75, vaseLifeDays:10, imageUrl:IMG.lily, price:10.00, wholesalePrice:4.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['pink','crimson','white'], flowerType:'Oriental Lily', occasion:['birthday','romance','wedding'], isFeatured:true, categorySlug:'lilies', inventory:350, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'White Calla Lily', slug:'white-calla-lily', scientificName:'Zantedeschia aethiopica', description:'Elegant white calla lily. The ultimate wedding flower — clean lines and pure form.', fragrance:'none', stemLengthCm:60, vaseLifeDays:10, imageUrl:IMG.white, price:12.00, wholesalePrice:5.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Colombia', color:['white'], flowerType:'Calla Lily', occasion:['wedding','sympathy','luxury'], isFeatured:true, categorySlug:'lilies', inventory:220, lowStock:30, importInfo:{sourceCountry:'Colombia',supplier:'Esmeralda Farms',arrivalDay:'Wednesday',shelfLifeDays:10} },
+  { name:'Pink Calla Lily', slug:'pink-calla-lily', scientificName:'Zantedeschia hybrid Pink', description:'Soft pink calla lily. Popular for bridal bouquets and contemporary floral design.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.pink, price:12.00, wholesalePrice:5.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['pink','blush'], flowerType:'Calla Lily', occasion:['wedding','birthday','luxury'], categorySlug:'lilies', inventory:180, lowStock:25, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:10} },
+  { name:'Purple Calla Lily', slug:'purple-calla-lily', scientificName:'Zantedeschia hybrid Purple', description:'Deep purple calla lily. A dramatic statement in contemporary wedding designs.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.moody, price:13.00, wholesalePrice:5.50, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['purple','deep purple'], flowerType:'Calla Lily', occasion:['wedding','luxury','corporate'], categorySlug:'lilies', inventory:140, lowStock:20, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:10} },
+  { name:'Orange Asiatic Lily', slug:'orange-asiatic-lily', scientificName:'Lilium Asiatic Orange', description:'Bright orange upward-facing lily. Unscented and ideal for those with fragrance sensitivity.', fragrance:'none', stemLengthCm:70, vaseLifeDays:12, imageUrl:IMG.bouquet, price:8.00, wholesalePrice:3.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['orange'], flowerType:'Asiatic Lily', occasion:['birthday','corporate','event'], categorySlug:'lilies', inventory:300, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:12} },
+  { name:'Gloriosa Lily', slug:'gloriosa-lily', scientificName:'Gloriosa superba Rothschildiana', description:'Spectacular flame lily from Kenya. Curled petals in red and yellow. A true exotic specimen.', fragrance:'none', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.bouquet, price:18.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['red','yellow','orange'], flowerType:'Gloriosa', occasion:['luxury','wedding','corporate'], isFeatured:true, categorySlug:'lilies', inventory:80, lowStock:12, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Thursday',shelfLifeDays:14} },
+  { name:'Yellow Asiatic Lily', slug:'yellow-asiatic-lily', scientificName:'Lilium Asiatic Yellow', description:'Bright unscented yellow lily. Cheerful and long-lasting for summer arrangements.', fragrance:'none', stemLengthCm:70, vaseLifeDays:12, imageUrl:IMG.field, price:8.00, wholesalePrice:3.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['yellow'], flowerType:'Asiatic Lily', occasion:['birthday','spring','corporate'], categorySlug:'lilies', inventory:280, lowStock:38, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:12} },
+  // ═══════════════════════ AUSTRALIAN NATIVES ═══════════════════════
+  { name:'King Protea', slug:'king-protea', scientificName:'Protea cynaroides', description:'Australia\'s most majestic native. Enormous flower heads up to 30cm wide. Grown in WA and NSW highlands.', careInstructions:'Keep stems clean, change water every 3 days. Lasts exceptionally well dried.', fragrance:'none', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.bouquet, price:28.00, wholesalePrice:12.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['pink','cream','white'], flowerType:'Protea', occasion:['wedding','corporate','luxury'], isFeatured:true, categorySlug:'proteas', inventory:110, lowStock:15 },
+  { name:'Pink Ice Protea', slug:'pink-ice-protea', scientificName:'Protea neriifolia Pink Ice', description:'Elegant cone-shaped protea with pink and silver bracts. Hardy and long-lasting.', fragrance:'none', stemLengthCm:55, vaseLifeDays:21, imageUrl:IMG.pink, price:20.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['pink','silver','white'], flowerType:'Protea', occasion:['wedding','corporate','event'], categorySlug:'proteas', inventory:150, lowStock:20 },
+  { name:'Yellow Pincushion Protea', slug:'yellow-pincushion-protea', scientificName:'Leucospermum cordifolium Yellow Bird', description:'Golden pincushion flower from WA. Bright and structural — loved by contemporary designers.', fragrance:'none', stemLengthCm:50, vaseLifeDays:18, imageUrl:IMG.field, price:15.00, wholesalePrice:6.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['yellow','gold'], flowerType:'Leucospermum', occasion:['wedding','corporate','event'], categorySlug:'proteas', inventory:120, lowStock:18 },
+  { name:'Red Pincushion Protea', slug:'red-pincushion-protea', scientificName:'Leucospermum cordifolium Red', description:'Vivid red pincushion protea. Dramatic and long-lasting. A favourite for statement arrangements.', fragrance:'none', stemLengthCm:50, vaseLifeDays:18, imageUrl:IMG.rose, price:15.00, wholesalePrice:6.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['red','orange'], flowerType:'Leucospermum', occasion:['wedding','corporate','luxury'], categorySlug:'proteas', inventory:110, lowStock:16 },
+  { name:'Common Waratah', slug:'common-waratah', scientificName:'Telopea speciosissima', description:'NSW floral emblem. Spectacular crimson flower head up to 15cm. Sustainably harvested in the Blue Mountains.', fragrance:'none', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.rose, price:32.00, wholesalePrice:14.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['red','crimson'], flowerType:'Waratah', occasion:['wedding','luxury','corporate'], isFeatured:true, categorySlug:'natives', inventory:80, lowStock:12 },
+  { name:'Old Man Banksia', slug:'old-man-banksia', scientificName:'Banksia serrata', description:'Iconic Australian banksia with cylindrical golden flower spikes. Outstanding structural element.', fragrance:'mild', stemLengthCm:55, vaseLifeDays:21, imageUrl:IMG.bouquet, price:22.00, wholesalePrice:10.00, season:'AUTUMN', origin:'LOCAL', country:'Australia', color:['gold','amber','brown'], flowerType:'Banksia', occasion:['wedding','corporate','event'], categorySlug:'natives', inventory:120, lowStock:18 },
+  { name:'Scarlet Banksia', slug:'scarlet-banksia', scientificName:'Banksia coccinea', description:'Rare and spectacular scarlet banksia from WA. Small squat flowers in vivid red-orange.', fragrance:'none', stemLengthCm:45, vaseLifeDays:18, imageUrl:IMG.rose, price:25.00, wholesalePrice:11.00, season:'WINTER', origin:'LOCAL', country:'Australia', color:['scarlet','red','orange'], flowerType:'Banksia', occasion:['wedding','luxury','event'], categorySlug:'natives', inventory:80, lowStock:12 },
+  { name:'Yellow Billy Buttons', slug:'yellow-billy-buttons', scientificName:'Craspedia globosa', description:'Perfectly round golden-yellow balls on straight stems. An Australian icon for rustic and contemporary styling.', fragrance:'none', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.field, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['yellow','gold'], flowerType:'Craspedia', occasion:['wedding','birthday','corporate'], isFeatured:true, categorySlug:'natives', inventory:280, lowStock:40 },
+  { name:'Red Kangaroo Paw', slug:'red-kangaroo-paw', scientificName:'Anigozanthos manglesii', description:'WA floral emblem. Velvety red and green tubular flowers on long stems. Uniquely Australian.', fragrance:'none', stemLengthCm:70, vaseLifeDays:14, imageUrl:IMG.rose, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['red','green'], flowerType:'Kangaroo Paw', occasion:['wedding','corporate','event'], categorySlug:'natives', inventory:180, lowStock:25 },
+  { name:'Yellow Kangaroo Paw', slug:'yellow-kangaroo-paw', scientificName:'Anigozanthos flavidus Yellow', description:'Bright yellow kangaroo paw. The most versatile and widely available kangaroo paw.', fragrance:'none', stemLengthCm:70, vaseLifeDays:14, imageUrl:IMG.field, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['yellow'], flowerType:'Kangaroo Paw', occasion:['wedding','corporate','event'], categorySlug:'natives', inventory:200, lowStock:28 },
+  { name:'Pink Kangaroo Paw', slug:'pink-kangaroo-paw', scientificName:'Anigozanthos hybrid Pink', description:'Soft pink kangaroo paw. Feminine and delicate for bridal and garden-style work.', fragrance:'none', stemLengthCm:65, vaseLifeDays:14, imageUrl:IMG.pink, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['pink'], flowerType:'Kangaroo Paw', occasion:['wedding','birthday','event'], categorySlug:'natives', inventory:180, lowStock:25 },
+  { name:'Pink Wax Flower', slug:'pink-wax-flower', scientificName:'Chamelaucium uncinatum Pink', description:'Prolific tiny pink flowers on arching branches. Geraldton wax is Australia\'s most exported native.', careInstructions:'Remove foliage below waterline. Long-lasting — can be dried in arrangement.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:21, imageUrl:IMG.pink, price:7.00, wholesalePrice:2.50, season:'WINTER', origin:'LOCAL', country:'Australia', color:['pink','white'], flowerType:'Wax Flower', occasion:['wedding','birthday','filler'], categorySlug:'natives', inventory:350, lowStock:50 },
+  { name:'White Wax Flower', slug:'white-wax-flower', scientificName:'Chamelaucium uncinatum White', description:'White Geraldton wax with a delicate star-shaped flower. Perfect bridal filler.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:21, imageUrl:IMG.white, price:7.00, wholesalePrice:2.50, season:'WINTER', origin:'LOCAL', country:'Australia', color:['white'], flowerType:'Wax Flower', occasion:['wedding','sympathy','filler'], categorySlug:'natives', inventory:320, lowStock:45 },
+  { name:'Safari Sunset Leucadendron', slug:'safari-sunset-leucadendron', scientificName:'Leucadendron Safari Sunset', description:'Dramatic deep red Leucadendron with burgundy bracts. Spectacular foliage flower for autumn arrangements.', fragrance:'none', stemLengthCm:55, vaseLifeDays:21, imageUrl:IMG.moody, price:10.00, wholesalePrice:4.00, season:'AUTUMN', origin:'LOCAL', country:'Australia', color:['burgundy','red','deep red'], flowerType:'Leucadendron', occasion:['wedding','corporate','luxury'], categorySlug:'natives', inventory:200, lowStock:28 },
+  { name:'Silver Dollar Eucalyptus', slug:'silver-dollar-eucalyptus', scientificName:'Eucalyptus cinerea', description:'Round blue-silver leaves on flexible stems. The most popular greenery in the floral industry.', careInstructions:'Stands alone well in water. Hang to dry for everlasting arrangements.', fragrance:'moderate', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.field, price:9.00, wholesalePrice:3.50, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['silver','blue-green'], flowerType:'Eucalyptus', occasion:['wedding','corporate','birthday'], categorySlug:'greenery', inventory:400, lowStock:55 },
+  { name:'Seeded Eucalyptus', slug:'seeded-eucalyptus', scientificName:'Eucalyptus parvifolia', description:'Small-leafed eucalyptus with decorative seed pods. Adds texture and movement to arrangements.', fragrance:'moderate', stemLengthCm:55, vaseLifeDays:18, imageUrl:IMG.field, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['green','silver'], flowerType:'Eucalyptus', occasion:['wedding','corporate','birthday'], categorySlug:'greenery', inventory:380, lowStock:50 },
+  { name:'Flannel Flower', slug:'flannel-flower', scientificName:'Actinotus helianthi', description:'Beloved Australian wildflower with soft flannel-like white bracts. The symbol of mental health awareness.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.white, price:14.00, wholesalePrice:6.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['white','cream'], flowerType:'Flannel Flower', occasion:['wedding','birthday','casual'], categorySlug:'natives', inventory:120, lowStock:18 },
+  { name:'Australian Wattle', slug:'australian-wattle', scientificName:'Acacia decurrens', description:'Australia\'s national floral emblem. Cascading golden pom-pom flowers with a warm honey fragrance.', fragrance:'strong', stemLengthCm:50, vaseLifeDays:7, imageUrl:IMG.field, price:9.00, wholesalePrice:4.00, season:'WINTER', origin:'LOCAL', country:'Australia', color:['yellow','gold'], flowerType:'Wattle', occasion:['wedding','spring','birthday'], categorySlug:'natives', inventory:200, lowStock:30 },
+  { name:'Gum Foliage Mixed', slug:'gum-foliage-mixed', scientificName:'Eucalyptus spp.', description:'Mixed native gum foliage — ideal as greenery base for native Australian arrangements.', fragrance:'moderate', stemLengthCm:60, vaseLifeDays:18, imageUrl:IMG.field, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['green','blue-green','silver'], flowerType:'Foliage', occasion:['wedding','corporate','birthday'], categorySlug:'greenery', inventory:350, lowStock:50 },
+  { name:'Bottlebrush Red', slug:'bottlebrush-red', scientificName:'Callistemon citrinus', description:'Vibrant red bottlebrush flowers. Uniquely Australian — popular for bold structural arrangements.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:14, imageUrl:IMG.rose, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['red','crimson'], flowerType:'Bottlebrush', occasion:['wedding','event','corporate'], categorySlug:'natives', inventory:150, lowStock:22 },
+  { name:'Everlasting Daisy', slug:'everlasting-daisy', scientificName:'Rhodanthe chlorocephala', description:'Western Australian paper daisy. Delicate pink and white flowers. Excellent fresh or dried.', fragrance:'none', stemLengthCm:35, vaseLifeDays:21, imageUrl:IMG.white, price:8.00, wholesalePrice:3.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['pink','white','yellow'], flowerType:'Daisy', occasion:['wedding','birthday','casual'], categorySlug:'natives', inventory:180, lowStock:25 },
+  // ═══════════════════════ RANUNCULUS ═══════════════════════
+  { name:'Pink Ranunculus', slug:'pink-ranunculus', scientificName:'Ranunculus asiaticus Pink', description:'Layers upon layers of tissue-thin pink petals. The supermodel of the flower world.', careInstructions:'Condition in cool shallow water. Buds open over 3–4 days. Avoid direct heat.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.pink, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['pink'], flowerType:'Ranunculus', occasion:['wedding','birthday','romance'], isFeatured:true, categorySlug:'ranunculus', inventory:350, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'White Ranunculus', slug:'white-ranunculus', scientificName:'Ranunculus asiaticus White', description:'Crisp white ranunculus with a creamy centre. An essential for romantic and wedding work.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.white, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Ranunculus', occasion:['wedding','sympathy','corporate'], isFeatured:true, categorySlug:'ranunculus', inventory:320, lowStock:45, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Burgundy Ranunculus', slug:'burgundy-ranunculus', scientificName:'Ranunculus asiaticus Burgundy', description:'Deep wine-burgundy ranunculus. Moody and opulent for autumn and winter event palettes.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['burgundy','wine','deep red'], flowerType:'Ranunculus', occasion:['wedding','luxury','corporate'], categorySlug:'ranunculus', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Coral Ranunculus', slug:'coral-ranunculus', scientificName:'Ranunculus asiaticus Coral', description:'Warm coral ranunculus — a trending colour for contemporary wedding design.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.pink, price:11.00, wholesalePrice:4.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['coral','peach'], flowerType:'Ranunculus', occasion:['wedding','birthday'], categorySlug:'ranunculus', inventory:240, lowStock:32, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Purple Ranunculus', slug:'purple-ranunculus', scientificName:'Ranunculus asiaticus Purple', description:'Rich purple ranunculus with violet undertones. Dramatic and luxurious.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['purple','violet'], flowerType:'Ranunculus', occasion:['wedding','luxury'], categorySlug:'ranunculus', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Yellow Ranunculus', slug:'yellow-ranunculus', scientificName:'Ranunculus asiaticus Yellow', description:'Sunny yellow ranunculus with glowing petals. Perfect for spring and summer events.', fragrance:'none', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.field, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['yellow'], flowerType:'Ranunculus', occasion:['birthday','spring','wedding'], categorySlug:'ranunculus', inventory:280, lowStock:38, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  // ═══════════════════════ ANEMONES ═══════════════════════
+  { name:'Blue Anemone', slug:'blue-anemone', scientificName:'Anemone coronaria Meron Blue', description:'Striking indigo anemone with a distinctive black centre. One of spring\'s most dramatic blooms.', careInstructions:'Stands in cool water. Recut daily. Phototropic — will bend toward light.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.moody, price:10.00, wholesalePrice:4.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['blue','indigo','cobalt'], flowerType:'Anemone', occasion:['wedding','corporate','birthday'], isFeatured:true, categorySlug:'anemones', inventory:240, lowStock:35, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar Kenya',arrivalDay:'Thursday',shelfLifeDays:8} },
+  { name:'White Anemone', slug:'white-anemone', scientificName:'Anemone coronaria Meron White', description:'Pure white anemone with black stamens. Striking monochromatic contrast.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.white, price:10.00, wholesalePrice:4.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['white','black'], flowerType:'Anemone', occasion:['wedding','sympathy','corporate'], categorySlug:'anemones', inventory:220, lowStock:30, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar Kenya',arrivalDay:'Thursday',shelfLifeDays:8} },
+  { name:'Red Anemone', slug:'red-anemone', scientificName:'Anemone coronaria Meron Red', description:'Vivid red anemone with a black eye. Exotic and intensely coloured.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.rose, price:10.00, wholesalePrice:4.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['red'], flowerType:'Anemone', occasion:['romance','birthday','event'], categorySlug:'anemones', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar Kenya',arrivalDay:'Thursday',shelfLifeDays:8} },
+  { name:'Purple Anemone', slug:'purple-anemone', scientificName:'Anemone coronaria Meron Purple', description:'Deep violet anemone. Bold and mysterious for winter and autumn palettes.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.moody, price:11.00, wholesalePrice:4.50, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['purple','deep violet'], flowerType:'Anemone', occasion:['wedding','luxury','corporate'], categorySlug:'anemones', inventory:180, lowStock:25, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar Kenya',arrivalDay:'Thursday',shelfLifeDays:8} },
+  { name:'Pink Anemone', slug:'pink-anemone', scientificName:'Anemone coronaria Meron Pink', description:'Bright cerise-pink anemone. Cheerful and vibrant for spring arrangements.', fragrance:'none', stemLengthCm:45, vaseLifeDays:8, imageUrl:IMG.pink, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['pink','cerise'], flowerType:'Anemone', occasion:['birthday','wedding','spring'], categorySlug:'anemones', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Marginpar Kenya',arrivalDay:'Thursday',shelfLifeDays:8} },
+  // ═══════════════════════ DAHLIAS ═══════════════════════
+  { name:'Café au Lait Dahlia', slug:'cafe-au-lait-dahlia', scientificName:'Dahlia Café au Lait', description:'The most Instagrammed dahlia in the world. Creamy blush with caramel tones. A wedding essential.', careInstructions:'Condition in warm water. Dahlias are heat-sensitive — keep cool after conditioning.', fragrance:'none', stemLengthCm:50, vaseLifeDays:7, imageUrl:IMG.pink, price:18.00, wholesalePrice:8.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['blush','caramel','cream'], flowerType:'Dahlia', occasion:['wedding','birthday','luxury'], isFeatured:true, categorySlug:'dahlias', inventory:160, lowStock:22 },
+  { name:'Dinner Plate White Dahlia', slug:'dinner-plate-white-dahlia', scientificName:'Dahlia hybrid White Giant', description:'Enormous white dinner plate dahlia up to 25cm across. A showpiece flower for grand events.', fragrance:'none', stemLengthCm:55, vaseLifeDays:7, imageUrl:IMG.white, price:15.00, wholesalePrice:6.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Dinner Plate Dahlia', occasion:['wedding','luxury','event'], categorySlug:'dahlias', inventory:120, lowStock:18, importInfo:{sourceCountry:'Netherlands',supplier:'Swan Island Dahlias',arrivalDay:'Wednesday',shelfLifeDays:7} },
+  { name:'Dinner Plate Hot Pink Dahlia', slug:'dinner-plate-hot-pink-dahlia', scientificName:'Dahlia hybrid Pink Giant', description:'Giant hot pink dinner plate dahlia. Impactful and opulent for summer event design.', fragrance:'none', stemLengthCm:55, vaseLifeDays:7, imageUrl:IMG.pink, price:15.00, wholesalePrice:6.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['hot pink','magenta'], flowerType:'Dinner Plate Dahlia', occasion:['birthday','wedding','event'], categorySlug:'dahlias', inventory:110, lowStock:16, importInfo:{sourceCountry:'Netherlands',supplier:'Swan Island Dahlias',arrivalDay:'Wednesday',shelfLifeDays:7} },
+  { name:'Burgundy Dahlia', slug:'burgundy-dinner-plate-dahlia', scientificName:'Dahlia hybrid Karma Choc', description:'Deep burgundy dinner plate dahlia — almost chocolate-coloured. A designer favourite.', fragrance:'none', stemLengthCm:55, vaseLifeDays:7, imageUrl:IMG.moody, price:15.00, wholesalePrice:6.00, season:'AUTUMN', origin:'IMPORTED', country:'Netherlands', color:['burgundy','chocolate','deep red'], flowerType:'Dinner Plate Dahlia', occasion:['wedding','luxury','autumn'], isFeatured:true, categorySlug:'dahlias', inventory:100, lowStock:15, importInfo:{sourceCountry:'Netherlands',supplier:'Swan Island Dahlias',arrivalDay:'Wednesday',shelfLifeDays:7} },
+  { name:'Ball Dahlia Red', slug:'ball-dahlia-red', scientificName:'Dahlia hybrid Small Ball Red', description:'Perfect globe-shaped red dahlia. Geometric and precise for structured arrangements.', fragrance:'none', stemLengthCm:45, vaseLifeDays:7, imageUrl:IMG.rose, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['red'], flowerType:'Ball Dahlia', occasion:['romance','wedding','corporate'], categorySlug:'dahlias', inventory:140, lowStock:20 },
+  { name:'Cactus Dahlia Orange', slug:'cactus-dahlia-orange', scientificName:'Dahlia hybrid Cactus Orange', description:'Spiky cactus-form dahlia in vivid orange. Playful and energetic for summer celebrations.', fragrance:'none', stemLengthCm:50, vaseLifeDays:7, imageUrl:IMG.bouquet, price:14.00, wholesalePrice:6.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['orange'], flowerType:'Cactus Dahlia', occasion:['birthday','event','corporate'], categorySlug:'dahlias', inventory:120, lowStock:18, importInfo:{sourceCountry:'Netherlands',supplier:'Swan Island Dahlias',arrivalDay:'Wednesday',shelfLifeDays:7} },
+  { name:'Pompom Dahlia Lavender', slug:'pompom-dahlia-lavender', scientificName:'Dahlia hybrid Pompom Lavender', description:'Perfectly round pompom dahlia in soft lavender. Charming and whimsical.', fragrance:'none', stemLengthCm:45, vaseLifeDays:7, imageUrl:IMG.single, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['lavender','lilac'], flowerType:'Pompom Dahlia', occasion:['wedding','birthday','casual'], categorySlug:'dahlias', inventory:130, lowStock:18 },
+  // ═══════════════════════ TROPICAL ═══════════════════════
+  { name:'Orange Bird of Paradise', slug:'orange-bird-of-paradise', scientificName:'Strelitzia reginae', description:'The ultimate tropical statement flower. Vivid orange and blue blooms resembling an exotic bird in flight.', careInstructions:'Open blooms manually by gently pulling the orange petals apart. Keep in water, lasts weeks.', fragrance:'none', stemLengthCm:80, vaseLifeDays:21, imageUrl:IMG.bouquet, price:18.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['orange','blue','yellow'], flowerType:'Bird of Paradise', occasion:['corporate','luxury','tropical','event'], isFeatured:true, categorySlug:'tropicals', inventory:180, lowStock:25 },
+  { name:'White Bird of Paradise', slug:'white-bird-of-paradise', scientificName:'Strelitzia nicolai', description:'Giant white bird of paradise. Sculptural leaves and dramatic white blooms for architectural styling.', fragrance:'none', stemLengthCm:120, vaseLifeDays:28, imageUrl:IMG.white, price:25.00, wholesalePrice:12.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['white','blue-black'], flowerType:'Bird of Paradise', occasion:['corporate','luxury','event'], isFeatured:true, categorySlug:'tropicals', inventory:80, lowStock:12 },
+  { name:'Red Anthurium', slug:'red-anthurium', scientificName:'Anthurium andreanum Red', description:'Glossy lacquer-red anthurium with a yellow spadix. Long-lasting and striking. A hotel lobby favourite.', careInstructions:'Mist the spathe daily. Lasts 3–4 weeks in water. Sensitive to cold — keep above 15°C.', fragrance:'none', stemLengthCm:55, vaseLifeDays:28, imageUrl:IMG.rose, price:16.00, wholesalePrice:7.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['red'], flowerType:'Anthurium', occasion:['corporate','luxury','hotel'], isFeatured:true, categorySlug:'tropicals', inventory:150, lowStock:20, importInfo:{sourceCountry:'Netherlands',supplier:'Anthura BV',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'Pink Anthurium', slug:'pink-anthurium', scientificName:'Anthurium andreanum Pink', description:'Soft pink anthurium. Feminine and elegant for luxury residential and hotel styling.', fragrance:'none', stemLengthCm:55, vaseLifeDays:28, imageUrl:IMG.pink, price:16.00, wholesalePrice:7.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['pink'], flowerType:'Anthurium', occasion:['corporate','luxury','hotel'], categorySlug:'tropicals', inventory:130, lowStock:18, importInfo:{sourceCountry:'Netherlands',supplier:'Anthura BV',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'White Anthurium', slug:'white-anthurium', scientificName:'Anthurium andreanum White', description:'Pure white anthurium with a cream spadix. Minimalist and elegant for contemporary interiors.', fragrance:'none', stemLengthCm:55, vaseLifeDays:28, imageUrl:IMG.white, price:18.00, wholesalePrice:8.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Anthurium', occasion:['corporate','luxury','wedding'], categorySlug:'tropicals', inventory:120, lowStock:16, importInfo:{sourceCountry:'Netherlands',supplier:'Anthura BV',arrivalDay:'Wednesday',shelfLifeDays:28} },
+  { name:'Red Gerbera', slug:'red-gerbera', scientificName:'Gerbera jamesonii Red', description:'Classic bright red gerbera daisy from Kenya. Long-stemmed and impactful for event styling.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.rose, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['red'], flowerType:'Gerbera', occasion:['birthday','corporate','event'], categorySlug:'tropicals', inventory:400, lowStock:55, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Mon, Thu',shelfLifeDays:10} },
+  { name:'Pink Gerbera', slug:'pink-gerbera', scientificName:'Gerbera jamesonii Pink', description:'Cheerful pink gerbera. One of the world\'s most popular cut flowers.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.pink, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['pink'], flowerType:'Gerbera', occasion:['birthday','corporate','event'], categorySlug:'tropicals', inventory:400, lowStock:55, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Mon, Thu',shelfLifeDays:10} },
+  { name:'Yellow Gerbera', slug:'yellow-gerbera', scientificName:'Gerbera jamesonii Yellow', description:'Sunny yellow gerbera. Bright and joyful for summer events and birthday arrangements.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.field, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['yellow'], flowerType:'Gerbera', occasion:['birthday','corporate','spring'], categorySlug:'tropicals', inventory:380, lowStock:52, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Mon, Thu',shelfLifeDays:10} },
+  { name:'Orange Gerbera', slug:'orange-gerbera', scientificName:'Gerbera jamesonii Orange', description:'Vibrant orange gerbera. Bold and tropical for summer celebrations.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.bouquet, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['orange'], flowerType:'Gerbera', occasion:['birthday','event','corporate'], categorySlug:'tropicals', inventory:360, lowStock:50, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Mon, Thu',shelfLifeDays:10} },
+  { name:'Torch Ginger', slug:'torch-ginger', scientificName:'Etlingera elatior', description:'Spectacular torch ginger from Thailand. Waxy conical flower head in vivid red. A dramatic event piece.', fragrance:'mild', stemLengthCm:70, vaseLifeDays:14, imageUrl:IMG.rose, price:24.00, wholesalePrice:10.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Thailand', color:['red','pink'], flowerType:'Tropical Ginger', occasion:['luxury','corporate','event'], categorySlug:'tropicals', inventory:60, lowStock:10, importInfo:{sourceCountry:'Thailand',supplier:'Thai Tropicals Export',arrivalDay:'Wednesday',shelfLifeDays:14} },
+  { name:'Heliconia Lobster Claw', slug:'heliconia-lobster-claw', scientificName:'Heliconia psittacorum', description:'Bold tropical heliconia with cascading red-yellow bracts. A statement piece for luxury events.', fragrance:'none', stemLengthCm:60, vaseLifeDays:14, imageUrl:IMG.bouquet, price:20.00, wholesalePrice:8.00, season:'SUMMER', origin:'IMPORTED', country:'Thailand', color:['red','yellow','orange'], flowerType:'Heliconia', occasion:['tropical','corporate','event'], categorySlug:'tropicals', inventory:80, lowStock:12, importInfo:{sourceCountry:'Thailand',supplier:'Thai Tropicals Export',arrivalDay:'Wednesday',shelfLifeDays:14} },
+  // ═══════════════════════ FILLERS ═══════════════════════
+  { name:'White Gypsophila (Baby\'s Breath)', slug:'white-gypsophila-babys-breath', scientificName:'Gypsophila paniculata White', description:'Clouds of tiny white flowers. The ultimate filler — lightens and softens any arrangement.', careInstructions:'Keep away from ethylene. Lasts well when dried. Re-cut stems frequently.', fragrance:'none', stemLengthCm:50, vaseLifeDays:10, imageUrl:IMG.white, price:5.00, wholesalePrice:2.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Gypsophila', occasion:['wedding','birthday','sympathy'], categorySlug:'fillers', inventory:600, lowStock:80, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'Pink Gypsophila', slug:'pink-gypsophila', scientificName:'Gypsophila paniculata Pink', description:'Delicate pink baby\'s breath. Trending for romantic, blush wedding palettes.', fragrance:'none', stemLengthCm:50, vaseLifeDays:10, imageUrl:IMG.pink, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['pink'], flowerType:'Gypsophila', occasion:['wedding','birthday','romance'], isFeatured:true, categorySlug:'fillers', inventory:500, lowStock:70, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'Purple Statice', slug:'purple-statice', scientificName:'Limonium sinuatum Purple', description:'Papery purple everlasting flowers. Excellent filler and brilliant when dried.', fragrance:'none', stemLengthCm:45, vaseLifeDays:21, imageUrl:IMG.moody, price:5.00, wholesalePrice:2.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['purple','lavender'], flowerType:'Statice', occasion:['wedding','birthday','sympathy'], categorySlug:'fillers', inventory:500, lowStock:65, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:21} },
+  { name:'White Statice', slug:'white-statice', scientificName:'Limonium sinuatum White', description:'White papery everlasting statice. Airy and long-lasting — ideal for sympathy and bridal work.', fragrance:'none', stemLengthCm:45, vaseLifeDays:21, imageUrl:IMG.white, price:5.00, wholesalePrice:2.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Statice', occasion:['wedding','sympathy','birthday'], categorySlug:'fillers', inventory:480, lowStock:65, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:21} },
+  { name:'Yellow Solidago', slug:'yellow-solidago', scientificName:'Solidago canadensis Yellow', description:'Feathery golden solidago sprays. Excellent textural filler for summer and autumn arrangements.', fragrance:'none', stemLengthCm:60, vaseLifeDays:12, imageUrl:IMG.field, price:5.00, wholesalePrice:2.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['yellow','gold'], flowerType:'Solidago', occasion:['wedding','birthday','corporate'], categorySlug:'fillers', inventory:450, lowStock:60, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:12} },
+  { name:'Red Hypericum Berry', slug:'red-hypericum-berry', scientificName:'Hypericum androsaemum Red', description:'Clusters of glossy red berries on arching stems. Adds a touch of the countryside to arrangements.', fragrance:'none', stemLengthCm:50, vaseLifeDays:14, imageUrl:IMG.rose, price:8.00, wholesalePrice:3.00, season:'AUTUMN', origin:'IMPORTED', country:'Netherlands', color:['red'], flowerType:'Hypericum', occasion:['wedding','birthday','autumn'], categorySlug:'fillers', inventory:280, lowStock:40, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:14} },
+  { name:'White Hypericum Berry', slug:'white-hypericum-berry', scientificName:'Hypericum androsaemum White', description:'Clusters of creamy white berries. A versatile bridal and event filler.', fragrance:'none', stemLengthCm:50, vaseLifeDays:14, imageUrl:IMG.white, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Hypericum', occasion:['wedding','birthday','sympathy'], categorySlug:'fillers', inventory:280, lowStock:38, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:14} },
+  { name:'Blue Scabiosa', slug:'blue-scabiosa', scientificName:'Scabiosa caucasica Blue', description:'Delicate lilac-blue pincushion flower on long slender stems. A cottage garden favourite.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:10, imageUrl:IMG.moody, price:9.00, wholesalePrice:3.50, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['blue','lavender'], flowerType:'Scabiosa', occasion:['wedding','birthday','garden'], categorySlug:'fillers', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:10} },
+  { name:'White Lisianthus', slug:'white-lisianthus', scientificName:'Eustoma grandiflorum White', description:'Ruffled white flowers resembling roses or peonies. Long-lasting and versatile.', fragrance:'none', stemLengthCm:55, vaseLifeDays:14, imageUrl:IMG.white, price:10.00, wholesalePrice:4.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white','cream'], flowerType:'Lisianthus', occasion:['wedding','sympathy','corporate'], categorySlug:'fillers', inventory:280, lowStock:38, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:14} },
+  { name:'Purple Lisianthus', slug:'purple-lisianthus', scientificName:'Eustoma grandiflorum Purple', description:'Rich purple lisianthus with a velvety texture. Striking and long-lasting for event design.', fragrance:'none', stemLengthCm:55, vaseLifeDays:14, imageUrl:IMG.moody, price:10.00, wholesalePrice:4.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['purple','violet'], flowerType:'Lisianthus', occasion:['wedding','corporate','luxury'], categorySlug:'fillers', inventory:250, lowStock:35, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:14} },
+  { name:'White Freesia', slug:'white-freesia', scientificName:'Freesia hybrid White', description:'Highly fragrant white freesia. One of the most scented flowers — pure and intoxicating.', careInstructions:'Recut stems. Freesia is very fragrant — perfect for enclosed spaces.', fragrance:'strong', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.white, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Freesia', occasion:['wedding','birthday','romance'], categorySlug:'fillers', inventory:380, lowStock:50, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'Yellow Freesia', slug:'yellow-freesia', scientificName:'Freesia hybrid Yellow', description:'Sweet-scented yellow freesia. Cheerful and fragrant for spring events.', fragrance:'strong', stemLengthCm:40, vaseLifeDays:10, imageUrl:IMG.field, price:6.00, wholesalePrice:2.50, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['yellow'], flowerType:'Freesia', occasion:['birthday','spring','wedding'], categorySlug:'fillers', inventory:320, lowStock:45, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'Muscari Grape Hyacinth', slug:'muscari-grape-hyacinth', scientificName:'Muscari armeniacum', description:'Tiny spires of deep blue-purple bells. Charming and cottage-garden in feel.', fragrance:'mild', stemLengthCm:20, vaseLifeDays:8, imageUrl:IMG.moody, price:8.00, wholesalePrice:3.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['blue','purple'], flowerType:'Muscari', occasion:['wedding','spring','birthday'], categorySlug:'fillers', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:8} },
+  // ═══════════════════════ GREENERY ═══════════════════════
+  { name:'Italian Ruscus', slug:'italian-ruscus', scientificName:'Ruscus hypophyllum', description:'Deep green flexible foliage. The most popular greenery in the event floral industry. Long-lasting.', careInstructions:'Remove lower leaves. Lasts 3 weeks in water. Can be air-dried.', fragrance:'none', stemLengthCm:55, vaseLifeDays:21, imageUrl:IMG.field, price:8.00, wholesalePrice:3.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Italy', color:['deep green'], flowerType:'Foliage', occasion:['wedding','corporate','sympathy'], categorySlug:'greenery', inventory:450, lowStock:60, importInfo:{sourceCountry:'Italy',supplier:'Italian Flora',arrivalDay:'Wednesday',shelfLifeDays:21} },
+  { name:'Leather Leaf Fern', slug:'leather-leaf-fern', scientificName:'Rumohra adiantiformis', description:'Dark leathery fern fronds. A staple greenery for sympathy, wedding and event arrangements.', fragrance:'none', stemLengthCm:45, vaseLifeDays:14, imageUrl:IMG.field, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'IMPORTED', country:'New Zealand', color:['dark green'], flowerType:'Fern', occasion:['wedding','sympathy','corporate'], categorySlug:'greenery', inventory:500, lowStock:70, importInfo:{sourceCountry:'New Zealand',supplier:'NZ Flora Exports',arrivalDay:'Thursday',shelfLifeDays:14} },
+  { name:'Asparagus Fern', slug:'asparagus-fern', scientificName:'Asparagus setaceus', description:'Feathery cloud-like fern. Delicate and airy — perfect for bridal and boutonnieres.', fragrance:'none', stemLengthCm:35, vaseLifeDays:14, imageUrl:IMG.field, price:5.00, wholesalePrice:2.00, season:'ALL_YEAR', origin:'IMPORTED', country:'Kenya', color:['light green'], flowerType:'Fern', occasion:['wedding','birthday','sympathy'], categorySlug:'greenery', inventory:480, lowStock:65, importInfo:{sourceCountry:'Kenya',supplier:'Oserian Development Company',arrivalDay:'Mon, Thu',shelfLifeDays:14} },
+  { name:'Monstera Leaf', slug:'monstera-leaf', scientificName:'Monstera deliciosa', description:'Iconic split tropical leaf. A statement greenery piece for luxury events and editorial styling.', fragrance:'none', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.field, price:15.00, wholesalePrice:6.00, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['dark green'], flowerType:'Tropical Foliage', occasion:['corporate','luxury','tropical','event'], isFeatured:true, categorySlug:'greenery', inventory:120, lowStock:18 },
+  { name:'Curly Willow', slug:'curly-willow', scientificName:'Salix matsudana Tortuosa', description:'Contorted willow branches with natural curves. A structural element for dramatic floral installations.', fragrance:'none', stemLengthCm:100, vaseLifeDays:21, imageUrl:IMG.field, price:10.00, wholesalePrice:4.00, season:'WINTER', origin:'LOCAL', country:'Australia', color:['brown','tan'], flowerType:'Branch', occasion:['corporate','luxury','wedding'], categorySlug:'greenery', inventory:100, lowStock:15 },
+  { name:'Olive Branch', slug:'olive-branch', scientificName:'Olea europaea', description:'Silver-green olive branches with or without olives. Romantic Mediterranean feel for garden weddings.', fragrance:'none', stemLengthCm:60, vaseLifeDays:21, imageUrl:IMG.field, price:10.00, wholesalePrice:4.00, season:'AUTUMN', origin:'LOCAL', country:'Australia', color:['silver-green','grey'], flowerType:'Branch', occasion:['wedding','corporate','event'], categorySlug:'greenery', inventory:140, lowStock:20 },
+  { name:'Spiral Eucalyptus', slug:'spiral-eucalyptus', scientificName:'Eucalyptus cinerea Spiral', description:'Long spiralling eucalyptus stems with round silver-blue leaves. Ideal for tall arrangements.', fragrance:'strong', stemLengthCm:75, vaseLifeDays:21, imageUrl:IMG.field, price:9.00, wholesalePrice:3.50, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['silver-blue','grey-green'], flowerType:'Eucalyptus', occasion:['wedding','corporate','birthday'], categorySlug:'greenery', inventory:380, lowStock:50 },
+  { name:'Pittosporum Silver Sheen', slug:'pittosporum-silver-sheen', scientificName:'Pittosporum tenuifolium Silver Sheen', description:'Wavy-edged silver-green leaves on arching stems. Excellent backdrop foliage for all events.', fragrance:'mild', stemLengthCm:50, vaseLifeDays:14, imageUrl:IMG.field, price:6.00, wholesalePrice:2.50, season:'ALL_YEAR', origin:'LOCAL', country:'Australia', color:['silver-green'], flowerType:'Foliage', occasion:['wedding','corporate','birthday'], categorySlug:'greenery', inventory:400, lowStock:55 },
+  // ═══════════════════════ WEDDING / LUXURY ═══════════════════════
+  { name:'Lily of the Valley', slug:'lily-of-the-valley', scientificName:'Convallaria majalis', description:'The most delicate and fragrant of all wedding flowers. Each tiny bell is perfection. Highly seasonal.', careInstructions:'Keep in cold water. Extremely delicate — handle minimally. One of the most prized bridal flowers.', fragrance:'strong', stemLengthCm:25, vaseLifeDays:7, imageUrl:IMG.white, price:38.00, wholesalePrice:15.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Lily of the Valley', occasion:['wedding','luxury','bridal'], isFeatured:true, categorySlug:'wedding', inventory:80, lowStock:12, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Sweet Pea Mixed', slug:'sweet-pea-mixed', scientificName:'Lathyrus odoratus mixed', description:'Fragrant climbing flower in a cloud of pastels. Quintessential English garden flower for spring weddings.', fragrance:'strong', stemLengthCm:35, vaseLifeDays:7, imageUrl:IMG.pink, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['pink','white','lavender','coral'], flowerType:'Sweet Pea', occasion:['wedding','birthday','garden'], isFeatured:true, categorySlug:'wedding', inventory:200, lowStock:28, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'White Stephanotis', slug:'white-stephanotis', scientificName:'Stephanotis floribunda', description:'Waxy white star-shaped flowers with an intense fragrance. The classic bridal flower for bouquets and buttonholes.', fragrance:'strong', stemLengthCm:30, vaseLifeDays:10, imageUrl:IMG.white, price:15.00, wholesalePrice:6.00, season:'ALL_YEAR', origin:'IMPORTED', country:'India', color:['white'], flowerType:'Stephanotis', occasion:['wedding','bridal','luxury'], isFeatured:true, categorySlug:'wedding', inventory:120, lowStock:18, importInfo:{sourceCountry:'India',supplier:'India Flower Exports',arrivalDay:'Wednesday',shelfLifeDays:10} },
+  { name:'White Hellebore', slug:'white-hellebore', scientificName:'Helleborus niger White', description:'Elegant winter rose. Nodding cup-shaped blooms with delicate stamens. A luxury winter wedding flower.', fragrance:'none', stemLengthCm:30, vaseLifeDays:10, imageUrl:IMG.white, price:20.00, wholesalePrice:8.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['white','cream','green'], flowerType:'Hellebore', occasion:['wedding','luxury','winter'], isFeatured:true, categorySlug:'wedding', inventory:80, lowStock:12, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Blush Hellebore', slug:'blush-hellebore', scientificName:'Helleborus hybrid Blush', description:'Dusty pink hellebore. Deeply romantic for winter wedding palettes.', fragrance:'none', stemLengthCm:30, vaseLifeDays:10, imageUrl:IMG.pink, price:20.00, wholesalePrice:8.00, season:'WINTER', origin:'IMPORTED', country:'Netherlands', color:['blush','dusty pink'], flowerType:'Hellebore', occasion:['wedding','luxury','winter'], categorySlug:'wedding', inventory:75, lowStock:12, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:10} },
+  { name:'Blue Delphinium', slug:'blue-delphinium', scientificName:'Delphinium elatum Blue', description:'Towering spires of true blue flowers. Dramatic vertical element for grand event installations.', careInstructions:'Condition in deep water for 24hrs. Keep away from heat sources. Support stems if needed.', fragrance:'none', stemLengthCm:100, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['blue','cobalt'], flowerType:'Delphinium', occasion:['wedding','corporate','event'], isFeatured:true, categorySlug:'wedding', inventory:180, lowStock:25, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'White Delphinium', slug:'white-delphinium', scientificName:'Delphinium elatum White', description:'Towering white delphinium spires. The ultimate vertical element for grand wedding installations.', fragrance:'none', stemLengthCm:100, vaseLifeDays:10, imageUrl:IMG.white, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['white'], flowerType:'Delphinium', occasion:['wedding','corporate','luxury'], categorySlug:'wedding', inventory:160, lowStock:22, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tue, Fri',shelfLifeDays:10} },
+  { name:'Iceland Poppy', slug:'iceland-poppy', scientificName:'Papaver nudicaule', description:'Translucent crepe-paper petals in soft pastels. A fleeting and exquisite spring bloom.', careInstructions:'Sear cut stem ends with flame for 10 seconds immediately after cutting. Keep cool.', fragrance:'none', stemLengthCm:45, vaseLifeDays:7, imageUrl:IMG.pink, price:10.00, wholesalePrice:4.00, season:'SPRING', origin:'IMPORTED', country:'Netherlands', color:['orange','pink','yellow','white'], flowerType:'Poppy', occasion:['wedding','birthday','spring'], isFeatured:true, categorySlug:'wedding', inventory:140, lowStock:20, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Tuesday',shelfLifeDays:7} },
+  { name:'Purple Foxglove', slug:'purple-foxglove', scientificName:'Digitalis purpurea', description:'Tall spires of spotted purple bells. Dramatic English cottage garden element for garden weddings.', fragrance:'none', stemLengthCm:80, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'SPRING', origin:'LOCAL', country:'Australia', color:['purple','white'], flowerType:'Foxglove', occasion:['wedding','garden','event'], categorySlug:'wedding', inventory:120, lowStock:18 },
+  // ═══════════════════════ SUNFLOWERS ═══════════════════════
+  { name:'Giant Sunflower', slug:'giant-sunflower', scientificName:'Helianthus annuus Giant', description:'Classic giant sunflower with a dinner plate-sized head. Joyful, impactful and quintessentially summer.', careInstructions:'Keep in deep water. Changes water daily. Lasts best in cooler temperatures.', fragrance:'none', stemLengthCm:70, vaseLifeDays:10, imageUrl:IMG.field, price:9.00, wholesalePrice:4.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['yellow','gold'], flowerType:'Sunflower', occasion:['birthday','summer','corporate','casual'], isFeatured:true, categorySlug:'sunflowers', inventory:280, lowStock:40 },
+  { name:'Teddy Bear Sunflower', slug:'teddy-bear-sunflower', scientificName:'Helianthus annuus Teddy Bear', description:'Fluffy double-headed sunflower. Unique texture and charming form — a crowd favourite.', fragrance:'none', stemLengthCm:60, vaseLifeDays:10, imageUrl:IMG.field, price:11.00, wholesalePrice:4.50, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['golden yellow'], flowerType:'Sunflower', occasion:['birthday','summer','event'], categorySlug:'sunflowers', inventory:200, lowStock:28 },
+  { name:'Mini Sunflower', slug:'mini-sunflower', scientificName:'Helianthus annuus Mini', description:'Branched stems with multiple small sunflower heads. Excellent value for event fills.', fragrance:'none', stemLengthCm:55, vaseLifeDays:12, imageUrl:IMG.field, price:7.50, wholesalePrice:3.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['yellow'], flowerType:'Sunflower', occasion:['birthday','corporate','summer'], categorySlug:'sunflowers', inventory:350, lowStock:48 },
+  { name:'Dark Chocolate Sunflower', slug:'dark-chocolate-sunflower', scientificName:'Helianthus annuus Moulin Rouge', description:'Deep burgundy-red sunflower with a velvet centre. Sophisticated and contemporary.', fragrance:'none', stemLengthCm:65, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'IMPORTED', country:'Netherlands', color:['dark red','burgundy','chocolate'], flowerType:'Sunflower', occasion:['wedding','birthday','autumn'], categorySlug:'sunflowers', inventory:150, lowStock:22, importInfo:{sourceCountry:'Netherlands',supplier:'Dutch Flower Group',arrivalDay:'Thursday',shelfLifeDays:10} },
+  // ═══════════════════════ HYDRANGEAS ═══════════════════════
+  { name:'White Hydrangea', slug:'white-hydrangea', scientificName:'Hydrangea macrophylla White', description:'Massive mophead hydrangea in fresh white. One stem fills an entire arrangement. A wedding staple.', careInstructions:'Condition in warm water with flower food. Mist regularly. Revive wilting heads by submerging in water.', fragrance:'none', stemLengthCm:60, vaseLifeDays:10, imageUrl:IMG.white, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['white','cream'], flowerType:'Hydrangea', occasion:['wedding','corporate','sympathy'], isFeatured:true, categorySlug:'hydrangeas', inventory:220, lowStock:30 },
+  { name:'Blue Hydrangea', slug:'blue-hydrangea', scientificName:'Hydrangea macrophylla Blue', description:'Beautiful sky-blue hydrangea. Rare true blue in the floral world. Beloved for coastal weddings.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['blue','cornflower','sky blue'], flowerType:'Hydrangea', occasion:['wedding','birthday','coastal'], isFeatured:true, categorySlug:'hydrangeas', inventory:180, lowStock:25 },
+  { name:'Pink Hydrangea', slug:'pink-hydrangea', scientificName:'Hydrangea macrophylla Pink', description:'Full pink hydrangea heads. Romantic and lush for summer garden party styling.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.pink, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['pink'], flowerType:'Hydrangea', occasion:['wedding','birthday','event'], categorySlug:'hydrangeas', inventory:200, lowStock:28 },
+  { name:'Green Hydrangea', slug:'green-hydrangea', scientificName:'Hydrangea arborescens Annabelle', description:'Lime-green Annabelle hydrangea. Contemporary and architectural. Excellent dried.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.field, price:12.00, wholesalePrice:5.00, season:'SUMMER', origin:'LOCAL', country:'Australia', color:['green','lime'], flowerType:'Hydrangea', occasion:['wedding','corporate','luxury'], categorySlug:'hydrangeas', inventory:160, lowStock:22 },
+  { name:'Purple Hydrangea', slug:'purple-hydrangea', scientificName:'Hydrangea macrophylla Purple', description:'Deep purple hydrangea with rich, full heads. Dramatic for autumn and winter events.', fragrance:'none', stemLengthCm:55, vaseLifeDays:10, imageUrl:IMG.moody, price:12.00, wholesalePrice:5.00, season:'AUTUMN', origin:'LOCAL', country:'Australia', color:['purple','violet'], flowerType:'Hydrangea', occasion:['wedding','corporate','luxury'], categorySlug:'hydrangeas', inventory:150, lowStock:22 },
+]
+
+async function main() {
+  console.log('🌸 Seeding Sydney Bloomer — 220+ flowers...')
+
+  // ─── Users ───────────────────────────────────────────────
+  const adminPw = await bcrypt.hash('admin123!', 12)
   const admin = await prisma.user.upsert({
     where: { email: 'admin@sydneybloomer.com.au' },
     update: {},
-    create: {
-      email: 'admin@sydneybloomer.com.au',
-      name: 'Sydney Bloomer Admin',
-      password: adminPassword,
-      role: UserRole.ADMIN,
-      emailVerified: new Date(),
-    },
+    create: { email: 'admin@sydneybloomer.com.au', name: 'Sydney Bloomer Admin', password: adminPw, role: UserRole.ADMIN, emailVerified: new Date() },
   })
 
-  const customerPassword = await bcrypt.hash('customer123!', 12)
   await prisma.user.upsert({
-    where: { email: 'wholesale@example.com' },
+    where: { email: 'wholesale@sydneybloomer.com.au' },
     update: {},
-    create: {
-      email: 'wholesale@example.com',
-      name: 'Floral Wholesale Co.',
-      password: customerPassword,
-      role: UserRole.WHOLESALE,
-      company: 'Floral Wholesale Co.',
-      phone: '+61 2 9000 0001',
-      emailVerified: new Date(),
-    },
+    create: { email: 'wholesale@sydneybloomer.com.au', name: 'Wholesale Demo Account', password: await bcrypt.hash('wholesale123!', 12), role: UserRole.WHOLESALE, company: 'Sydney Events Co.', phone: '0416757654', emailVerified: new Date() },
   })
 
   // ─── Categories ───────────────────────────────────────────
-  const categories = await Promise.all([
-    prisma.flowerCategory.upsert({
-      where: { slug: 'roses' },
-      update: {},
-      create: { name: 'Roses', slug: 'roses', description: 'Classic and romantic roses in every shade', sortOrder: 1 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'peonies' },
-      update: {},
-      create: { name: 'Peonies', slug: 'peonies', description: 'Lush, full blooms perfect for weddings', sortOrder: 2 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'orchids' },
-      update: {},
-      create: { name: 'Orchids', slug: 'orchids', description: 'Exotic and long-lasting orchid varieties', sortOrder: 3 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'tulips' },
-      update: {},
-      create: { name: 'Tulips', slug: 'tulips', description: 'Spring favourites in a rainbow of colours', sortOrder: 4 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'ranunculus' },
-      update: {},
-      create: { name: 'Ranunculus', slug: 'ranunculus', description: 'Delicate multi-petalled blooms', sortOrder: 5 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'natives' },
-      update: {},
-      create: { name: 'Australian Natives', slug: 'natives', description: 'Locally sourced native Australian flowers', sortOrder: 6 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'wildflowers' },
-      update: {},
-      create: { name: 'Wildflowers', slug: 'wildflowers', description: 'Seasonal wild and meadow blooms', sortOrder: 7 },
-    }),
-    prisma.flowerCategory.upsert({
-      where: { slug: 'proteas' },
-      update: {},
-      create: { name: 'Proteas', slug: 'proteas', description: 'Statement native protea varieties', sortOrder: 8 },
-    }),
-  ])
-
-  // ─── Flowers ──────────────────────────────────────────────
-  const flowersData = [
-    {
-      name: 'Morning Blush Peony',
-      slug: 'morning-blush-peony',
-      description: 'Luxurious soft pink peonies sourced from the Sydney Basin. Full, lush blooms perfect for bridal and event styling.',
-      imageUrl: 'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800',
-      images: ['https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800'],
-      price: 18,
-      wholesalePrice: 9,
-      season: Season.SPRING,
-      origin: FlowerOrigin.LOCAL,
-      country: 'Australia',
-      color: ['pink', 'blush'],
-      flowerType: 'Peony',
-      occasion: ['wedding', 'birthday', 'romance'],
-      isFeatured: true,
-      categorySlug: 'peonies',
-      inventory: 340,
-      lowStock: 50,
-    },
-    {
-      name: 'Dutch White Ranunculus',
-      slug: 'dutch-white-ranunculus',
-      description: 'Crisp white ranunculus imported weekly from Holland. Multi-layered petals with a sculptural, elegant form.',
-      imageUrl: 'https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?auto=format&fit=crop&w=800&q=80'],
-      price: 12,
-      wholesalePrice: 6,
-      season: Season.SPRING,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Netherlands',
-      color: ['white', 'cream'],
-      flowerType: 'Ranunculus',
-      occasion: ['wedding', 'corporate', 'sympathy'],
-      isFeatured: true,
-      categorySlug: 'ranunculus',
-      inventory: 480,
-      lowStock: 60,
-      importInfo: { sourceCountry: 'Netherlands', supplier: 'Dutch Flower Group', arrivalDay: 'Tuesday', shelfLifeDays: 10 },
-    },
-    {
-      name: 'Blue Anemone',
-      slug: 'blue-anemone',
-      description: 'Striking indigo and cobalt anemones with distinctive black centres. A showstopper for contemporary arrangements.',
-      imageUrl: 'https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1525310072745-f49212b5ac6d?auto=format&fit=crop&w=800&q=80'],
-      price: 15,
-      wholesalePrice: 7.50,
-      season: Season.WINTER,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Netherlands',
-      color: ['blue', 'indigo', 'purple'],
-      flowerType: 'Anemone',
-      occasion: ['wedding', 'corporate', 'birthday'],
-      isFeatured: true,
-      categorySlug: 'wildflowers',
-      inventory: 220,
-      lowStock: 30,
-      importInfo: { sourceCountry: 'Netherlands', supplier: 'Marginpar Kenya', arrivalDay: 'Thursday', shelfLifeDays: 8 },
-    },
-    {
-      name: 'Phalaenopsis Orchid',
-      slug: 'phalaenopsis-orchid',
-      description: 'Exquisite purple-speckled moth orchids sourced directly from Kyoto, Japan. Long-lasting and architecturally stunning.',
-      imageUrl: 'https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1561181286-d3fee7d55364?auto=format&fit=crop&w=800&q=80'],
-      price: 45,
-      wholesalePrice: 22,
-      season: Season.ALL_YEAR,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Japan',
-      color: ['purple', 'white', 'magenta'],
-      flowerType: 'Orchid',
-      occasion: ['corporate', 'luxury', 'wedding'],
-      isFeatured: true,
-      categorySlug: 'orchids',
-      inventory: 80,
-      lowStock: 15,
-      importInfo: { sourceCountry: 'Japan', supplier: 'Kyoto Botanical Exports', arrivalDay: 'Wednesday', shelfLifeDays: 21, arrivalFrequency: 'Fortnightly' },
-    },
-    {
-      name: 'Garden Rose — Apricot Charm',
-      slug: 'garden-rose-apricot-charm',
-      description: 'Full-headed garden roses in soft apricot tones. Sourced from the Ecuadorian highlands for exceptional vase life.',
-      imageUrl: 'https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80'],
-      price: 8,
-      wholesalePrice: 3.50,
-      season: Season.ALL_YEAR,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Ecuador',
-      color: ['apricot', 'peach', 'coral'],
-      flowerType: 'Rose',
-      occasion: ['wedding', 'birthday', 'romance', 'corporate'],
-      isFeatured: true,
-      categorySlug: 'roses',
-      inventory: 650,
-      lowStock: 80,
-      importInfo: { sourceCountry: 'Ecuador', supplier: 'Rosas del Ecuador', arrivalDay: 'Monday & Thursday', shelfLifeDays: 12 },
-    },
-    {
-      name: 'Tulip — Parrot Flame',
-      slug: 'tulip-parrot-flame',
-      description: 'Dramatic parrot tulips in fiery red and gold. Imported from Holland, these fringed blooms make a bold statement.',
-      imageUrl: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?auto=format&fit=crop&w=800&q=80'],
-      price: 6,
-      wholesalePrice: 3,
-      season: Season.SPRING,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Netherlands',
-      color: ['red', 'gold', 'orange'],
-      flowerType: 'Tulip',
-      occasion: ['birthday', 'spring', 'corporate'],
-      isFeatured: false,
-      categorySlug: 'tulips',
-      inventory: 380,
-      lowStock: 50,
-      importInfo: { sourceCountry: 'Netherlands', supplier: 'Dutch Flower Group', arrivalDay: 'Tuesday & Friday', shelfLifeDays: 8 },
-    },
-    {
-      name: 'Meadow Whimsy Mix',
-      slug: 'meadow-whimsy-mix',
-      description: 'Hand-harvested Sydney wildflower mix — daisies, lavender, cosmos, and seasonal natives. Wild, romantic, and uniquely Australian.',
-      imageUrl: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80'],
-      price: 9,
-      wholesalePrice: 4.50,
-      season: Season.SUMMER,
-      origin: FlowerOrigin.LOCAL,
-      country: 'Australia',
-      color: ['mixed', 'white', 'purple', 'yellow'],
-      flowerType: 'Wildflower Mix',
-      occasion: ['wedding', 'birthday', 'casual'],
-      isFeatured: false,
-      categorySlug: 'wildflowers',
-      inventory: 120,
-      lowStock: 20,
-    },
-    {
-      name: 'Royal Protea Heirloom',
-      slug: 'royal-protea-heirloom',
-      description: "Spectacular King proteas from the Hunter Valley. Australia's national floral emblem, harvested at peak bloom for maximum impact.",
-      imageUrl: 'https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800',
-      images: ['https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800'],
-      price: 28,
-      wholesalePrice: 14,
-      season: Season.ALL_YEAR,
-      origin: FlowerOrigin.LOCAL,
-      country: 'Australia',
-      color: ['pink', 'rust', 'cream'],
-      flowerType: 'Protea',
-      occasion: ['wedding', 'corporate', 'luxury'],
-      isFeatured: true,
-      categorySlug: 'proteas',
-      inventory: 95,
-      lowStock: 15,
-    },
-    {
-      name: 'White Daisy Garden Mix',
-      slug: 'white-daisy-garden-mix',
-      description: 'Fresh and breezy white daisies with sunny yellow centres. Grown locally in the Blue Mountains foothills.',
-      imageUrl: 'https://images.pexels.com/photos/56866/garden-rose-red-pink-56866.jpeg?auto=compress&cs=tinysrgb&w=800',
-      images: ['https://images.pexels.com/photos/56866/garden-rose-red-pink-56866.jpeg?auto=compress&cs=tinysrgb&w=800'],
-      price: 5,
-      wholesalePrice: 2.50,
-      season: Season.SUMMER,
-      origin: FlowerOrigin.LOCAL,
-      country: 'Australia',
-      color: ['white', 'yellow'],
-      flowerType: 'Daisy',
-      occasion: ['birthday', 'sympathy', 'casual'],
-      isFeatured: false,
-      categorySlug: 'wildflowers',
-      inventory: 200,
-      lowStock: 30,
-    },
-    {
-      name: 'Twilight Velvet Orchid',
-      slug: 'twilight-velvet-orchid',
-      description: 'Deep magenta-purple Cymbidium orchids from New Zealand. Long stems and velvety texture make these a designer favourite.',
-      imageUrl: 'https://images.unsplash.com/photo-1457089328109-e5d9bd499191?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1457089328109-e5d9bd499191?auto=format&fit=crop&w=800&q=80'],
-      price: 35,
-      wholesalePrice: 17,
-      season: Season.AUTUMN,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'New Zealand',
-      color: ['magenta', 'deep purple', 'burgundy'],
-      flowerType: 'Orchid',
-      occasion: ['corporate', 'luxury', 'wedding'],
-      isFeatured: true,
-      categorySlug: 'orchids',
-      inventory: 60,
-      lowStock: 10,
-      importInfo: { sourceCountry: 'New Zealand', supplier: 'NZ Orchid Collective', arrivalDay: 'Wednesday', shelfLifeDays: 18 },
-    },
-    {
-      name: 'Autumn Banksia',
-      slug: 'autumn-banksia',
-      description: 'Striking golden-amber Banksia from Western Australia. A bold structural element in any arrangement.',
-      imageUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=800&q=80'],
-      price: 22,
-      wholesalePrice: 11,
-      season: Season.AUTUMN,
-      origin: FlowerOrigin.LOCAL,
-      country: 'Australia',
-      color: ['amber', 'gold', 'russet'],
-      flowerType: 'Banksia',
-      occasion: ['wedding', 'corporate', 'luxury'],
-      isFeatured: false,
-      categorySlug: 'natives',
-      inventory: 75,
-      lowStock: 15,
-    },
-    {
-      name: 'Colombian Red Rose',
-      slug: 'colombian-red-rose',
-      description: 'Classic deep red long-stem roses from Colombia\'s Bogotá highlands. 60cm stems, velvety petals, powerful fragrance.',
-      imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
-      images: ['https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80'],
-      price: 7,
-      wholesalePrice: 3,
-      season: Season.ALL_YEAR,
-      origin: FlowerOrigin.IMPORTED,
-      country: 'Colombia',
-      color: ['red', 'deep red'],
-      flowerType: 'Rose',
-      occasion: ['romance', 'wedding', 'birthday'],
-      isFeatured: false,
-      categorySlug: 'roses',
-      inventory: 800,
-      lowStock: 100,
-      importInfo: { sourceCountry: 'Colombia', supplier: 'Bogotá Blooms SA', arrivalDay: 'Tuesday, Thursday & Saturday', shelfLifeDays: 14 },
-    },
+  const categoryDefs = [
+    { name:'Roses',               slug:'roses',       description:'Classic and romantic roses from local and global growers', sortOrder:1 },
+    { name:'Tulips',              slug:'tulips',      description:'Spring tulips in every colour — single, double and parrot varieties', sortOrder:2 },
+    { name:'Peonies',             slug:'peonies',     description:'Lush full-bloomed peonies for weddings and luxury events', sortOrder:3 },
+    { name:'Orchids',             slug:'orchids',     description:'Exotic and long-lasting orchid varieties from Asia and Australia', sortOrder:4 },
+    { name:'Lilies',              slug:'lilies',      description:'Oriental, Asiatic and Calla lilies for every occasion', sortOrder:5 },
+    { name:'Ranunculus',          slug:'ranunculus',  description:'Multi-layered tissue-thin blooms beloved by designers', sortOrder:6 },
+    { name:'Anemones',            slug:'anemones',    description:'Bold spring anemones with distinctive black centres', sortOrder:7 },
+    { name:'Dahlias',             slug:'dahlias',     description:'Dinner plate, cactus and pompom dahlias for summer events', sortOrder:8 },
+    { name:'Australian Natives',  slug:'natives',     description:'Locally sourced Australian native flowers', sortOrder:9 },
+    { name:'Proteas',             slug:'proteas',     description:'Majestic protea varieties from WA and NSW highlands', sortOrder:10 },
+    { name:'Tropical',            slug:'tropicals',   description:'Exotic tropical flowers and bird of paradise', sortOrder:11 },
+    { name:'Fillers',             slug:'fillers',     description:'Gypsophila, statice, freesia and more', sortOrder:12 },
+    { name:'Greenery',            slug:'greenery',    description:'Eucalyptus, ferns, and foliage for all arrangements', sortOrder:13 },
+    { name:'Wedding & Luxury',    slug:'wedding',     description:'Premium flowers for weddings and luxury events', sortOrder:14 },
+    { name:'Sunflowers',          slug:'sunflowers',  description:'Giant, mini and specialty sunflower varieties', sortOrder:15 },
+    { name:'Hydrangeas',          slug:'hydrangeas',  description:'Full mophead and lacecap hydrangeas in all colours', sortOrder:16 },
   ]
 
-  for (const flowerData of flowersData) {
-    const { inventory, lowStock, importInfo, categorySlug, ...data } = flowerData
-    const category = categories.find(c => c.slug === categorySlug)
+  const catMap: Record<string, string> = {}
+  for (const c of categoryDefs) {
+    const cat = await prisma.flowerCategory.upsert({ where:{slug:c.slug}, update:{}, create:c })
+    catMap[c.slug] = cat.id
+  }
 
-    const flower = await prisma.flower.upsert({
-      where: { slug: data.slug },
-      update: {},
-      create: {
+  // ─── Flowers ──────────────────────────────────────────────
+  let created = 0
+  for (const f of flowers) {
+    const { inventory, lowStock, importInfo, categorySlug, ...data } = f
+    const existing = await prisma.flower.findUnique({ where: { slug: data.slug } })
+    if (existing) { created++; continue }
+
+    const flower = await prisma.flower.create({
+      data: {
         ...data,
         price: data.price,
         wholesalePrice: data.wholesalePrice,
-        categoryId: category?.id,
+        unit: data.unit ?? 'stem',
+        categoryId: catMap[categorySlug] ?? null,
       },
     })
 
-    await prisma.flowerInventory.upsert({
-      where: { flowerId: flower.id },
-      update: {},
-      create: {
+    await prisma.flowerInventory.create({
+      data: {
         flowerId: flower.id,
         quantity: inventory,
         lowStockThreshold: lowStock,
@@ -345,92 +258,82 @@ async function main() {
     })
 
     if (importInfo) {
-      await prisma.importedFlower.upsert({
-        where: { flowerId: flower.id },
-        update: {},
-        create: { flowerId: flower.id, ...importInfo },
+      await prisma.importedFlower.create({
+        data: { flowerId: flower.id, ...importInfo },
       })
     }
+    created++
   }
+  console.log(`✅ ${created} flowers seeded`)
 
   // ─── Testimonials ─────────────────────────────────────────
   const testimonials = [
-    {
-      authorName: 'Olivia Harrington',
-      company: 'The Grounds of Alexandria',
-      role: 'Event Director',
-      avatarUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=100&q=80',
-      content: 'Sydney Bloomer elevated our entire venue. The seasonal installations are consistently breathtaking and our guests always ask who does our flowers. Worth every cent.',
-      rating: 5,
-      eventType: 'Corporate Subscription',
-    },
-    {
-      authorName: 'James & Sophie Chen',
-      role: 'Wedding Clients',
-      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80',
-      content: 'We trusted Sydney Bloomer with our entire wedding floristry and they exceeded every expectation. From the bridal bouquet to the last centrepiece — absolute perfection.',
-      rating: 5,
-      eventType: 'Wedding',
-    },
-    {
-      authorName: 'Marcus Webb',
-      company: 'Park Hyatt Sydney',
-      role: 'General Manager',
-      avatarUrl: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=100&q=80',
-      content: 'Three years of flawless weekly deliveries. Sydney Bloomer understands luxury hospitality and delivers arrangements that match our five-star standard without fail.',
-      rating: 5,
-      eventType: 'Hotel Subscription',
-    },
+    { id:'t1', authorName:'Olivia Harrington', company:'The Grounds of Alexandria', role:'Event Director', avatarUrl:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=100&q=80', content:'Sydney Bloomer elevated our entire venue. The seasonal installations are consistently breathtaking and our guests always ask who does our flowers. Worth every cent.', rating:5, eventType:'Corporate Subscription', sortOrder:0 },
+    { id:'t2', authorName:'James & Sophie Chen', role:'Wedding Clients', avatarUrl:'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80', content:'We trusted Sydney Bloomer with our entire wedding floristry and they exceeded every expectation. From the bridal bouquet to the last centrepiece — absolute perfection.', rating:5, eventType:'Wedding', sortOrder:1 },
+    { id:'t3', authorName:'Marcus Webb', company:'Park Hyatt Sydney', role:'General Manager', avatarUrl:'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=100&q=80', content:'Three years of flawless weekly deliveries. Sydney Bloomer understands luxury hospitality and delivers arrangements that match our five-star standard without fail.', rating:5, eventType:'Hotel Subscription', sortOrder:2 },
+    { id:'t4', authorName:'Charlotte Davies', company:'Vogue Australia', role:'Creative Director', avatarUrl:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=100&q=80', content:'Our editorial shoots are only as good as our florals. Sydney Bloomer never disappoints — rare varieties sourced overnight, styled to perfection.', rating:5, eventType:'Editorial', sortOrder:3 },
   ]
 
-  for (let i = 0; i < testimonials.length; i++) {
-    await prisma.testimonial.upsert({
-      where: { id: `seed-testimonial-${i}` },
-      update: {},
-      create: { id: `seed-testimonial-${i}`, ...testimonials[i], sortOrder: i },
-    })
+  for (const t of testimonials) {
+    await prisma.testimonial.upsert({ where:{id:t.id}, update:{}, create:t })
   }
 
   // ─── Gallery ──────────────────────────────────────────────
-  const galleryItems = [
-    { imageUrl: 'https://images.pexels.com/photos/931177/pexels-photo-931177.jpeg?auto=compress&cs=tinysrgb&w=800', category: GalleryCategory.WEDDING, title: 'Spring Bridal Ceremony' },
-    { imageUrl: 'https://images.unsplash.com/photo-1457089328109-e5d9bd499191?auto=format&fit=crop&w=800&q=80', category: GalleryCategory.EVENTS, title: 'Gala Dinner Installation' },
-    { imageUrl: 'https://images.unsplash.com/photo-1502977249166-824b3a8a4d6d?auto=format&fit=crop&w=800&q=80', category: GalleryCategory.STUDIO, title: 'Studio Arrangement' },
-    { imageUrl: 'https://images.unsplash.com/photo-1519378058457-4c29a0a2efac?auto=format&fit=crop&w=800&q=80', category: GalleryCategory.SEASONAL, title: 'Autumn Collection' },
-    { imageUrl: 'https://images.unsplash.com/photo-1562690868-60bbe7293e94?auto=format&fit=crop&w=800&q=80', category: GalleryCategory.CORPORATE, title: 'Corporate Foyer Display' },
-    { imageUrl: 'https://images.pexels.com/photos/1166869/pexels-photo-1166869.jpeg?auto=compress&cs=tinysrgb&w=800', category: GalleryCategory.WEDDING, title: 'Reception Table Setting' },
+  const gallery = [
+    { id:'g1', imageUrl:IMG.pink,    category:GalleryCategory.WEDDING,    title:'Spring Bridal Ceremony',       sortOrder:0 },
+    { id:'g2', imageUrl:IMG.orchid,  category:GalleryCategory.EVENTS,     title:'Grand Gala Installation',      sortOrder:1 },
+    { id:'g3', imageUrl:IMG.lily,    category:GalleryCategory.STUDIO,     title:'Studio Arrangement',           sortOrder:2 },
+    { id:'g4', imageUrl:IMG.bouquet, category:GalleryCategory.SEASONAL,   title:'Autumn Collection',            sortOrder:3 },
+    { id:'g5', imageUrl:IMG.moody,   category:GalleryCategory.CORPORATE,  title:'Corporate Foyer Display',      sortOrder:4 },
+    { id:'g6', imageUrl:IMG.white,   category:GalleryCategory.WEDDING,    title:'Reception Table Setting',      sortOrder:5 },
+    { id:'g7', imageUrl:IMG.rose,    category:GalleryCategory.EVENTS,     title:'Valentine\'s Day Collection',  sortOrder:6 },
+    { id:'g8', imageUrl:IMG.field,   category:GalleryCategory.SEASONAL,   title:'Summer Garden Party',          sortOrder:7 },
   ]
 
-  for (let i = 0; i < galleryItems.length; i++) {
-    await prisma.gallery.upsert({
-      where: { id: `seed-gallery-${i}` },
-      update: {},
-      create: { id: `seed-gallery-${i}`, ...galleryItems[i], sortOrder: i },
+  for (const g of gallery) {
+    await prisma.gallery.upsert({ where:{id:g.id}, update:{}, create:g })
+  }
+
+  // ─── Event Inquiries ──────────────────────────────────────
+  await prisma.eventInquiry.upsert({
+    where:{id:'inq-1'}, update:{},
+    create:{ id:'inq-1', fullName:'Charlotte Davies', email:'charlotte@example.com', phone:'+61 400 111 222', eventType:EventType.WEDDING, eventDate:new Date('2026-10-18'), guestCount:180, venue:'Establishment Hotel, Sydney CBD', budget:'$8,000–$12,000', description:'Garden-style romantic wedding. Soft whites, blush pinks, and greenery throughout. Bridal party of 6.' },
+  })
+
+  await prisma.eventInquiry.upsert({
+    where:{id:'inq-2'}, update:{},
+    create:{ id:'inq-2', fullName:'Park Hyatt Sydney', email:'events@parkhyatt.com.au', phone:'+61 2 9256 1234', company:'Park Hyatt Sydney', eventType:EventType.HOTEL, description:'Weekly lobby and restaurant floral subscription. Approx. 12 arrangements per delivery. Premium natives and imports preferred.' },
+  })
+
+  // ─── Sample Orders ────────────────────────────────────────
+  const peony = await prisma.flower.findUnique({ where:{slug:'pink-sarah-bernhardt-peony'} })
+  const rose  = await prisma.flower.findUnique({ where:{slug:'red-freedom-rose'} })
+
+  if (peony && rose) {
+    const order = await prisma.order.upsert({
+      where:{ orderNumber:'SB-2026-0001' },
+      update:{},
+      create:{
+        orderNumber:'SB-2026-0001',
+        guestEmail:'demo@example.com',
+        status:'DELIVERED',
+        subtotal:370,
+        deliveryFee:0,
+        total:370,
+        deliveryType:'STANDARD',
+        deliveryAddress:'42 Crown St, Surry Hills NSW 2010',
+        notes:'Sample order — demo data',
+        items:{ create:[
+          { flowerId:peony.id, quantity:10, unitPrice:28, total:280 },
+          { flowerId:rose.id,  quantity:10, unitPrice:8.50, total:85 },
+        ]},
+      },
     })
   }
 
-  // ─── Sample Event Inquiries ───────────────────────────────
-  await prisma.eventInquiry.upsert({
-    where: { id: 'seed-inquiry-1' },
-    update: {},
-    create: {
-      id: 'seed-inquiry-1',
-      fullName: 'Charlotte Davies',
-      email: 'charlotte@email.com',
-      phone: '+61 400 000 001',
-      eventType: EventType.WEDDING,
-      eventDate: new Date('2025-03-15'),
-      guestCount: 180,
-      venue: 'Establishment Hotel, Sydney CBD',
-      budget: '$8,000–$12,000',
-      description: 'Garden-style romantic wedding. Soft whites, blush pinks, and greenery throughout.',
-    },
-  })
-
-  console.log('✅ Database seeded successfully!')
-  console.log(`   Admin login: admin@sydneybloomer.com.au / admin123!`)
+  console.log('✅ Sydney Bloomer database fully seeded')
+  console.log('   Admin:     admin@sydneybloomer.com.au / admin123!')
+  console.log('   Wholesale: wholesale@sydneybloomer.com.au / wholesale123!')
 }
 
-main()
-  .catch(e => { console.error(e); process.exit(1) })
-  .finally(async () => { await prisma.$disconnect() })
+main().catch(e => { console.error(e); process.exit(1) }).finally(() => prisma.$disconnect())
